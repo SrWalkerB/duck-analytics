@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum DataSourceType {
+  MONGODB
+}
+
+enum ComponentType {
+  TABLE
+  BAR_CHART
+  LINE_CHART
+  PIE_CHART
+  KPI
+}
+
+enum FilterType {
+  SELECT
+  MULTI_SELECT
+  DATE_RANGE
+  TEXT
+}
+
+model User {
+  id          String      @id @default(uuid(7))
+  email       String      @unique
+  password    String
+  name        String
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  deletedAt   DateTime?   @map("deleted_at")
+
+  dataSources  DataSource[]
+  queries      Query[]
+  components   Component[]
+  dashboards   Dashboard[]
+  folders      Folder[]
+  aiConfig     AIConfig?
+
+  @@map("users")
+}
+
+model AIConfig {
+  id              String    @id @default(uuid(7))
+  userId          String    @unique @map("user_id")
+  user            User      @relation(fields: [userId], references: [id])
+  provider        String    @default("google")
+  encryptedApiKey String    @map("encrypted_api_key")
+  model           String    @default("gemini-1.5-flash")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("ai_configs")
+}
+
+model Folder {
+  id        String    @id @default(uuid(7))
+  name      String
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id])
+  parentId  String?   @map("parent_id")
+  parent    Folder?   @relation("FolderTree", fields: [parentId], references: [id])
+  children  Folder[]  @relation("FolderTree")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  dataSources DataSource[]
+  queries     Query[]
+  dashboards  Dashboard[]
+
+  @@map("folders")
+}
+
+model DataSource {
+  id                String         @id @default(uuid(7))
+  name              String
+  type              DataSourceType @default(MONGODB)
+  connectionString  String         @map("connection_string")
+  database          String
+  userId            String         @map("user_id")
+  user              User           @relation(fields: [userId], references: [id])
+  folderId          String?        @map("folder_id")
+  folder            Folder?        @relation(fields: [folderId], references: [id])
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  deletedAt         DateTime?      @map("deleted_at")
+
+  queries          Query[]
+  dashboardFilters DashboardFilter[]
+
+  @@map("data_sources")
+}
+
+model Query {
+  id            String     @id @default(uuid(7))
+  name          String
+  dataSourceId  String     @map("data_source_id")
+  dataSource    DataSource @relation(fields: [dataSourceId], references: [id])
+  collection    String
+  configuration Json       @default("{}")
+  pipeline      Json       @default("[]")
+  userId        String     @map("user_id")
+  user          User       @relation(fields: [userId], references: [id])
+  folderId      String?    @map("folder_id")
+  folder        Folder?    @relation(fields: [folderId], references: [id])
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  deletedAt     DateTime?  @map("deleted_at")
+
+  components Component[]
+
+  @@map("queries")
+}
+
+model Component {
+  id            String        @id @default(uuid(7))
+  name          String
+  type          ComponentType @default(TABLE)
+  queryId       String        @map("query_id")
+  query         Query         @relation(fields: [queryId], references: [id])
+  configuration Json          @default("{}")
+  userId        String        @map("user_id")
+  user          User          @relation(fields: [userId], references: [id])
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  deletedAt     DateTime?     @map("deleted_at")
+
+  dashboardComponents DashboardComponent[]
+
+  @@map("components")
+}
+
+model Dashboard {
+  id            String    @id @default(uuid(7))
+  name          String
+  description   String?
+  configuration Json      @default("{}")
+  userId        String    @map("user_id")
+  user          User      @relation(fields: [userId], references: [id])
+  folderId      String?   @map("folder_id")
+  folder        Folder?   @relation(fields: [folderId], references: [id])
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  dashboardComponents DashboardComponent[]
+  dashboardFilters    DashboardFilter[]
+
+  @@map("dashboards")
+}
+
+model DashboardComponent {
+  id              String    @id @default(uuid(7))
+  dashboardId     String    @map("dashboard_id")
+  dashboard       Dashboard @relation(fields: [dashboardId], references: [id])
+  componentId     String    @map("component_id")
+  component       Component @relation(fields: [componentId], references: [id])
+  x               Int       @default(0)
+  y               Int       @default(0)
+  w               Int       @default(6)
+  h               Int       @default(4)
+  title           String?
+  backgroundColor String?   @map("background_color")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("dashboard_components")
+}
+
+model DashboardFilter {
+  id                 String      @id @default(uuid(7))
+  dashboardId        String      @map("dashboard_id")
+  dashboard          Dashboard   @relation(fields: [dashboardId], references: [id])
+  label              String
+  type               FilterType  @default(SELECT)
+  field              String
+  collection         String
+  dataSourceId       String      @map("data_source_id")
+  dataSource         DataSource  @relation(fields: [dataSourceId], references: [id])
+  parentFilterId     String?     @map("parent_filter_id")
+  parent             DashboardFilter?  @relation("FilterChain", fields: [parentFilterId], references: [id])
+  children           DashboardFilter[] @relation("FilterChain")
+  targetComponentIds String[]    @map("target_component_ids")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
+
+  @@map("dashboard_filters")
+}
