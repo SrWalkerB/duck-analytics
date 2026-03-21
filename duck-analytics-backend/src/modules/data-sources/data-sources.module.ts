@@ -7,7 +7,17 @@ import { MongoDBIntrospectionService } from '../../lib/mongodb/mongodb-introspec
 
 @Module({
   controllers: [DataSourcesController],
-  providers: [DataSourcesService, EncryptionService, MongoDBService, MongoDBIntrospectionService],
-  exports: [DataSourcesService, MongoDBService, MongoDBIntrospectionService, EncryptionService],
+  providers: [
+    DataSourcesService,
+    EncryptionService,
+    MongoDBService,
+    MongoDBIntrospectionService,
+  ],
+  exports: [
+    DataSourcesService,
+    MongoDBService,
+    MongoDBIntrospectionService,
+    EncryptionService,
+  ],
 })
 export class DataSourcesModule {}

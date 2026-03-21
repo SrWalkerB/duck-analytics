@@ -18,7 +18,9 @@ export class DashboardsService {
       where: { userId, deletedAt: null },
       include: {
         dashboardComponents: {
-          include: { component: { select: { id: true, name: true, type: true } } },
+          include: {
+            component: { select: { id: true, name: true, type: true } },
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
@@ -56,7 +58,9 @@ export class DashboardsService {
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.description !== undefined && { description: dto.description }),
-        ...(dto.configuration !== undefined && { configuration: dto.configuration as object }),
+        ...(dto.configuration !== undefined && {
+          configuration: dto.configuration as object,
+        }),
         ...(dto.folderId !== undefined && { folderId: dto.folderId }),
       },
     });
@@ -64,10 +68,17 @@ export class DashboardsService {
 
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
-    return this.prisma.dashboard.update({ where: { id }, data: { deletedAt: new Date() } });
+    return this.prisma.dashboard.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 
-  async addComponent(dashboardId: string, userId: string, dto: AddDashboardComponentDto) {
+  async addComponent(
+    dashboardId: string,
+    userId: string,
+    dto: AddDashboardComponentDto,
+  ) {
     await this.findOne(dashboardId, userId);
     return this.prisma.dashboardComponent.create({
       data: {
@@ -88,7 +99,11 @@ export class DashboardsService {
     return this.prisma.dashboardComponent.delete({ where: { id: dcId } });
   }
 
-  async updateLayout(dashboardId: string, userId: string, dto: UpdateLayoutDto) {
+  async updateLayout(
+    dashboardId: string,
+    userId: string,
+    dto: UpdateLayoutDto,
+  ) {
     await this.findOne(dashboardId, userId);
     const updates = dto.layout.map((item) =>
       this.prisma.dashboardComponent.update({
@@ -106,7 +121,10 @@ export class DashboardsService {
     await Promise.all(
       dashboard.dashboardComponents.map(async (dc) => {
         try {
-          results[dc.id] = await this.components.getData(dc.componentId, userId);
+          results[dc.id] = await this.components.getData(
+            dc.componentId,
+            userId,
+          );
         } catch {
           results[dc.id] = { error: 'Failed to load data' };
         }

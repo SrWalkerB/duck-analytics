@@ -35,7 +35,11 @@ export class ComponentsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @CurrentUser() userId: string, @Body() dto: object) {
+  update(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+    @Body() dto: object,
+  ) {
     return this.service.update(id, userId, dto as UpdateComponentDto);
   }
 

@@ -37,7 +37,11 @@ export class MongoDBIntrospectionService {
     return fields.sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  private extractFields(obj: Record<string, unknown>, prefix: string, result: Map<string, Set<string>>) {
+  private extractFields(
+    obj: Record<string, unknown>,
+    prefix: string,
+    result: Map<string, Set<string>>,
+  ) {
     for (const [key, value] of Object.entries(obj)) {
       if (key === '__v') continue;
       const path = prefix ? `${prefix}.${key}` : key;
@@ -55,7 +59,7 @@ export class MongoDBIntrospectionService {
     if (value instanceof Date) return 'date';
     if (Array.isArray(value)) return 'array';
     if (typeof value === 'object') {
-      if ('_bsontype' in (value as object)) return 'objectId';
+      if ('_bsontype' in value) return 'objectId';
       return 'object';
     }
     return typeof value;

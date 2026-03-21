@@ -8,8 +8,3 @@ services:
       POSTGRES_USER: docker
       POSTGRES_PASSWORD: docker
       POSTGRES_DB: duck_analytics_db
-    volumes:
-      - duck_analytics_data:/var/lib/postgresql/data
-
-volumes:
-  duck_analytics_data:

@@ -7,7 +7,12 @@ import { ComponentsModule } from '../components/components.module';
 import { DashboardsModule } from '../dashboards/dashboards.module';
 
 @Module({
-  imports: [DataSourcesModule, QueriesModule, ComponentsModule, DashboardsModule],
+  imports: [
+    DataSourcesModule,
+    QueriesModule,
+    ComponentsModule,
+    DashboardsModule,
+  ],
   controllers: [AIController],
   providers: [AIService],
 })

@@ -49,6 +49,13 @@ export class FiltersController {
     @Query('search') search?: string,
     @Query('parentValue') parentValue?: string,
   ) {
-    return this.service.getValues(filterId, userId, parseInt(page), parseInt(pageSize), search, parentValue);
+    return this.service.getValues(
+      filterId,
+      userId,
+      parseInt(page),
+      parseInt(pageSize),
+      search,
+      parentValue,
+    );
   }
 }

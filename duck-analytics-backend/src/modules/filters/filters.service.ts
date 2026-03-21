@@ -51,7 +51,14 @@ export class FiltersService {
     return this.prisma.dashboardFilter.delete({ where: { id } });
   }
 
-  async getValues(filterId: string, userId: string, page: number, pageSize: number, search?: string, parentValue?: unknown) {
+  async getValues(
+    filterId: string,
+    userId: string,
+    page: number,
+    pageSize: number,
+    search?: string,
+    parentValue?: unknown,
+  ) {
     const filter = await this.findOne(filterId);
     const ds = await this.dataSources.findOne(filter.dataSourceId, userId);
     const db = await this.mongodb.getDb(ds.connectionString, ds.database);
@@ -63,7 +70,9 @@ export class FiltersService {
     }
 
     if (search) {
-      pipeline.push({ $match: { [filter.field]: { $regex: search, $options: 'i' } } });
+      pipeline.push({
+        $match: { [filter.field]: { $regex: search, $options: 'i' } },
+      });
     }
 
     const skip = (page - 1) * pageSize;
@@ -74,7 +83,14 @@ export class FiltersService {
       { $limit: pageSize },
     );
 
-    const results = await db.collection(filter.collection).aggregate(pipeline).toArray();
-    return { values: results.map((r) => r._id).filter((v) => v !== null), page, pageSize };
+    const results = await db
+      .collection(filter.collection)
+      .aggregate(pipeline)
+      .toArray();
+    return {
+      values: results.map((r) => r._id).filter((v) => v !== null),
+      page,
+      pageSize,
+    };
   }
 }

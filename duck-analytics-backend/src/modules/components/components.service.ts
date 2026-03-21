@@ -47,14 +47,19 @@ export class ComponentsService {
       data: {
         ...(dto.name !== undefined && { name: dto.name }),
         ...(dto.type !== undefined && { type: dto.type }),
-        ...(dto.configuration !== undefined && { configuration: dto.configuration as object }),
+        ...(dto.configuration !== undefined && {
+          configuration: dto.configuration as object,
+        }),
       },
     });
   }
 
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
-    return this.prisma.component.update({ where: { id }, data: { deletedAt: new Date() } });
+    return this.prisma.component.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 
   async getData(id: string, userId: string) {

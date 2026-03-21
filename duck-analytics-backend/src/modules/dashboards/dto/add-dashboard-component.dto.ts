@@ -10,4 +10,6 @@ export const addDashboardComponentSchema = z.object({
   backgroundColor: z.string().optional(),
 });
 
-export type AddDashboardComponentDto = z.infer<typeof addDashboardComponentSchema>;
+export type AddDashboardComponentDto = z.infer<
+  typeof addDashboardComponentSchema
+>;

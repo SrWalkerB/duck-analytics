@@ -8,7 +8,10 @@ export class MongoDBService implements OnModuleDestroy {
 
   constructor(private readonly encryption: EncryptionService) {}
 
-  async getDb(encryptedConnectionString: string, database: string): Promise<Db> {
+  async getDb(
+    encryptedConnectionString: string,
+    database: string,
+  ): Promise<Db> {
     const connectionString = this.encryption.decrypt(encryptedConnectionString);
     const key = `${connectionString}/${database}`;
 
@@ -21,8 +24,24 @@ export class MongoDBService implements OnModuleDestroy {
     return this.clients.get(key)!.db(database);
   }
 
-  async testConnection(encryptedConnectionString: string, database: string): Promise<void> {
+  async testConnection(
+    encryptedConnectionString: string,
+    database: string,
+  ): Promise<void> {
     const connectionString = this.encryption.decrypt(encryptedConnectionString);
+    const client = new MongoClient(connectionString);
+    try {
+      await client.connect();
+      await client.db(database).command({ ping: 1 });
+    } finally {
+      await client.close();
+    }
+  }
+
+  async testRawConnection(
+    connectionString: string,
+    database: string,
+  ): Promise<void> {
     const client = new MongoClient(connectionString);
     try {
       await client.connect();

@@ -24,7 +24,7 @@ export interface Query {
   name: string
   dataSourceId: string
   collection: string
-  configuration: QueryConfiguration
+  configuration: QueryConfigurationAny
   pipeline: unknown[]
   userId: string
   folderId: string | null
@@ -65,6 +65,81 @@ export interface QueryConfiguration {
   limit?: number
   projections?: string[]
   lookups?: QueryLookup[]
+}
+
+// ── Pipeline Configuration (v2) ──
+
+export interface PipelineStageBase {
+  id: string
+  enabled: boolean
+}
+
+export type MatchStage = PipelineStageBase & {
+  type: '$match'
+  filters: QueryFilter[]
+}
+
+export type LookupStage = PipelineStageBase & {
+  type: '$lookup'
+  from: string
+  localField: string
+  foreignField: string
+  as: string
+  unwind?: boolean
+}
+
+export type GroupStage = PipelineStageBase & {
+  type: '$group'
+  groupBy: string[]
+  aggregations: QueryAggregation[]
+}
+
+export type SortStage = PipelineStageBase & {
+  type: '$sort'
+  sort: QuerySort[]
+}
+
+export type LimitStage = PipelineStageBase & {
+  type: '$limit'
+  limit: number
+}
+
+export type ProjectStage = PipelineStageBase & {
+  type: '$project'
+  include: string[]
+  exclude?: string[]
+}
+
+export type UnwindStage = PipelineStageBase & {
+  type: '$unwind'
+  path: string
+  preserveNullAndEmptyArrays: boolean
+}
+
+export type PipelineStage =
+  | MatchStage
+  | LookupStage
+  | GroupStage
+  | SortStage
+  | LimitStage
+  | ProjectStage
+  | UnwindStage
+
+export interface PipelineConfiguration {
+  version: 2
+  stages: PipelineStage[]
+}
+
+export type QueryConfigurationAny = QueryConfiguration | PipelineConfiguration
+
+export function isPipelineConfiguration(
+  config: unknown,
+): config is PipelineConfiguration {
+  return (
+    typeof config === 'object' &&
+    config !== null &&
+    (config as PipelineConfiguration).version === 2
+  )
 }
 
 export interface Component {

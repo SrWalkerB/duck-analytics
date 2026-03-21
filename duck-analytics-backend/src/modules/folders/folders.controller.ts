@@ -30,7 +30,11 @@ export class FoldersController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @CurrentUser() userId: string, @Body() dto: object) {
+  update(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+    @Body() dto: object,
+  ) {
     return this.service.update(id, userId, dto as UpdateFolderDto);
   }
 
@@ -40,7 +44,15 @@ export class FoldersController {
   }
 
   @Post(':id/move')
-  move(@Param('id') id: string, @CurrentUser() userId: string, @Body() body: object) {
-    return this.service.move(id, userId, (body as { parentId: string | null }).parentId);
+  move(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+    @Body() body: object,
+  ) {
+    return this.service.move(
+      id,
+      userId,
+      (body as { parentId: string | null }).parentId,
+    );
   }
 }

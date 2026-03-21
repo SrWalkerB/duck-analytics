@@ -29,6 +29,12 @@ function NewDataSourcePage() {
     onError: () => toast.error('Failed to create'),
   })
 
+  const testMutation = useMutation({
+    mutationFn: () => api.post('/v1/data-sources/test-connection', { connectionString, database }),
+    onSuccess: () => toast.success('Connection successful!'),
+    onError: () => toast.error('Connection failed. Check the connection string and database name.'),
+  })
+
   return (
     <div className="mx-auto max-w-lg">
       <Card>
@@ -50,6 +56,14 @@ function NewDataSourcePage() {
               <Input value={database} onChange={(e) => setDatabase(e.target.value)} required />
             </div>
             <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={testMutation.isPending || !connectionString || !database}
+                onClick={() => testMutation.mutate()}
+              >
+                {testMutation.isPending ? 'Testing...' : 'Test Connection'}
+              </Button>
               <Button type="submit" disabled={mutation.isPending}>
                 {mutation.isPending ? 'Creating...' : 'Create'}
               </Button>

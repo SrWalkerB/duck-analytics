@@ -34,8 +34,21 @@ export class DataSourcesController {
     return this.service.create(userId, dto as CreateDataSourceDto);
   }
 
+  @Post('test-connection')
+  testRawConnection(@Body() dto: object) {
+    const { connectionString, database } = dto as {
+      connectionString: string;
+      database: string;
+    };
+    return this.service.testRawConnection(connectionString, database);
+  }
+
   @Put(':id')
-  update(@Param('id') id: string, @CurrentUser() userId: string, @Body() dto: object) {
+  update(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+    @Body() dto: object,
+  ) {
     return this.service.update(id, userId, dto as UpdateDataSourceDto);
   }
 
@@ -55,7 +68,11 @@ export class DataSourcesController {
   }
 
   @Get(':id/collections/:name/schema')
-  getCollectionSchema(@Param('id') id: string, @Param('name') name: string, @CurrentUser() userId: string) {
+  getCollectionSchema(
+    @Param('id') id: string,
+    @Param('name') name: string,
+    @CurrentUser() userId: string,
+  ) {
     return this.service.getCollectionSchema(id, name, userId);
   }
 }

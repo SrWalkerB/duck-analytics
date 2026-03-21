@@ -14,6 +14,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import type { CreateQueryDto } from './dto/create-query.dto';
 import type { UpdateQueryDto } from './dto/update-query.dto';
 import type { PreviewQueryDto } from './dto/preview-query.dto';
+import type { PreviewPartialQueryDto } from './dto/preview-partial-query.dto';
 
 @Controller('v1/queries')
 @UseGuards(JwtAuthGuard)
@@ -36,7 +37,11 @@ export class QueriesController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @CurrentUser() userId: string, @Body() dto: object) {
+  update(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+    @Body() dto: object,
+  ) {
     return this.service.update(id, userId, dto as UpdateQueryDto);
   }
 
@@ -53,5 +58,10 @@ export class QueriesController {
   @Post('preview')
   preview(@CurrentUser() userId: string, @Body() dto: object) {
     return this.service.preview(userId, dto as PreviewQueryDto);
+  }
+
+  @Post('preview-partial')
+  previewPartial(@CurrentUser() userId: string, @Body() dto: object) {
+    return this.service.previewPartial(userId, dto as PreviewPartialQueryDto);
   }
 }

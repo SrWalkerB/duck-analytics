@@ -1,0 +1,132 @@
+import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { api } from '@/services/api'
+import type { LookupStage, FieldSchema } from '@/types'
+
+interface Props {
+  stage: LookupStage
+  fields: FieldSchema[]
+  dataSourceId: string
+  collections: string[]
+  onUpdate: (patch: Partial<LookupStage>) => void
+}
+
+export function LookupStageEditor({
+  stage,
+  fields,
+  dataSourceId,
+  collections,
+  onUpdate,
+}: Props) {
+  // Local state for debounced "as" field
+  const [localAs, setLocalAs] = useState(stage.as)
+
+  useEffect(() => {
+    setLocalAs(stage.as)
+  }, [stage.as])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localAs !== stage.as) {
+        onUpdate({ as: localAs })
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [localAs, stage.as, onUpdate])
+
+  // Fetch schema for foreign collection
+  const { data: foreignSchema } = useQuery<{ collection: string; fields: FieldSchema[] }>({
+    queryKey: ['collection-schema', dataSourceId, stage.from],
+    queryFn: () =>
+      api.get(`/v1/data-sources/${dataSourceId}/collections/${stage.from}/schema`).then((r) => r.data),
+    enabled: !!dataSourceId && !!stage.from,
+  })
+
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-0.5">
+          <Label className="text-[10px] text-muted-foreground">Collection (from)</Label>
+          <Select value={stage.from} onValueChange={(v) => onUpdate({ from: v })}>
+            <SelectTrigger className="h-6 text-xs">
+              <SelectValue placeholder="collection" />
+            </SelectTrigger>
+            <SelectContent>
+              {collections.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-0.5">
+          <Label className="text-[10px] text-muted-foreground">Local field</Label>
+          <Select value={stage.localField} onValueChange={(v) => onUpdate({ localField: v })}>
+            <SelectTrigger className="h-6 text-xs">
+              <SelectValue placeholder="campo" />
+            </SelectTrigger>
+            <SelectContent>
+              {fields.map((f) => (
+                <SelectItem key={f.name} value={f.name}>
+                  {f.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-0.5">
+          <Label className="text-[10px] text-muted-foreground">Foreign field</Label>
+          <Select value={stage.foreignField} onValueChange={(v) => onUpdate({ foreignField: v })}>
+            <SelectTrigger className="h-6 text-xs">
+              <SelectValue placeholder="_id" />
+            </SelectTrigger>
+            <SelectContent>
+              {(foreignSchema?.fields ?? []).map((f) => (
+                <SelectItem key={f.name} value={f.name}>
+                  {f.name}
+                </SelectItem>
+              ))}
+              {!foreignSchema && (
+                <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                  {stage.from ? 'Carregando…' : 'Selecione a collection'}
+                </p>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-0.5">
+          <Label className="text-[10px] text-muted-foreground">Output alias</Label>
+          <Input
+            className="h-6 text-xs"
+            value={localAs}
+            onChange={(e) => setLocalAs(e.target.value)}
+            placeholder="joined_data"
+          />
+        </div>
+      </div>
+      <div className="flex items-center gap-2 pt-0.5">
+        <Checkbox
+          id={`unwind-${stage.id}`}
+          checked={stage.unwind ?? false}
+          onCheckedChange={(v) => onUpdate({ unwind: v === true })}
+        />
+        <label htmlFor={`unwind-${stage.id}`} className="cursor-pointer text-xs text-muted-foreground">
+          Flatten array (unwind)
+        </label>
+      </div>
+    </div>
+  )
+}

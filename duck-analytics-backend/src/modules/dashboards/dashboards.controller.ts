@@ -37,7 +37,11 @@ export class DashboardsController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @CurrentUser() userId: string, @Body() dto: object) {
+  update(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+    @Body() dto: object,
+  ) {
     return this.service.update(id, userId, dto as UpdateDashboardDto);
   }
 
@@ -47,17 +51,33 @@ export class DashboardsController {
   }
 
   @Post(':id/components')
-  addComponent(@Param('id') id: string, @CurrentUser() userId: string, @Body() dto: object) {
-    return this.service.addComponent(id, userId, dto as AddDashboardComponentDto);
+  addComponent(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+    @Body() dto: object,
+  ) {
+    return this.service.addComponent(
+      id,
+      userId,
+      dto as AddDashboardComponentDto,
+    );
   }
 
   @Delete(':id/components/:dcId')
-  removeComponent(@Param('id') id: string, @Param('dcId') dcId: string, @CurrentUser() userId: string) {
+  removeComponent(
+    @Param('id') id: string,
+    @Param('dcId') dcId: string,
+    @CurrentUser() userId: string,
+  ) {
     return this.service.removeComponent(id, dcId, userId);
   }
 
   @Put(':id/layout')
-  updateLayout(@Param('id') id: string, @CurrentUser() userId: string, @Body() dto: object) {
+  updateLayout(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+    @Body() dto: object,
+  ) {
     return this.service.updateLayout(id, userId, dto as UpdateLayoutDto);
   }
 

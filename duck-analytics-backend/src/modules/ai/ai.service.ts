@@ -86,15 +86,25 @@ export class AIService {
 
   async generateDashboard(userId: string, dto: GenerateDashboardDto) {
     const config = await this.prisma.aIConfig.findUnique({ where: { userId } });
-    if (!config) throw new NotFoundException('AI config not found. Set your API key in Settings.');
+    if (!config)
+      throw new NotFoundException(
+        'AI config not found. Set your API key in Settings.',
+      );
 
     const apiKey = this.encryption.decrypt(config.encryptedApiKey);
-    const schema = await this.dataSources.getCollections(dto.dataSourceId, userId);
+    const schema = await this.dataSources.getCollections(
+      dto.dataSourceId,
+      userId,
+    );
     const collectionSchemas: Record<string, unknown> = {};
 
     for (const col of schema.collections.slice(0, 10)) {
       try {
-        const s = await this.dataSources.getCollectionSchema(dto.dataSourceId, col, userId);
+        const s = await this.dataSources.getCollectionSchema(
+          dto.dataSourceId,
+          col,
+          userId,
+        );
         collectionSchemas[col] = s.fields;
       } catch {
         collectionSchemas[col] = [];
@@ -127,11 +137,21 @@ Rules:
 
   async generateComponent(userId: string, dto: GenerateComponentDto) {
     const config = await this.prisma.aIConfig.findUnique({ where: { userId } });
-    if (!config) throw new NotFoundException('AI config not found. Set your API key in Settings.');
+    if (!config)
+      throw new NotFoundException(
+        'AI config not found. Set your API key in Settings.',
+      );
 
     const apiKey = this.encryption.decrypt(config.encryptedApiKey);
-    const schema = await this.dataSources.getCollectionSchema(dto.dataSourceId, dto.collection, userId);
-    const allCollections = await this.dataSources.getCollections(dto.dataSourceId, userId);
+    const schema = await this.dataSources.getCollectionSchema(
+      dto.dataSourceId,
+      dto.collection,
+      userId,
+    );
+    const allCollections = await this.dataSources.getCollections(
+      dto.dataSourceId,
+      userId,
+    );
 
     const systemPrompt = `You are a data analytics assistant for MongoDB.
 Generate a single component configuration for the collection "${dto.collection}".
@@ -171,7 +191,11 @@ Rules:
     return object;
   }
 
-  async applyGeneratedDashboard(userId: string, dataSourceId: string, preview: GeneratedDashboard) {
+  async applyGeneratedDashboard(
+    userId: string,
+    dataSourceId: string,
+    preview: GeneratedDashboard,
+  ) {
     const createdQueryIds: string[] = [];
     const createdComponentIds: string[] = [];
 
@@ -189,7 +213,7 @@ Rules:
       const queryId = createdQueryIds[c.queryIndex];
       const component = await this.components.create(userId, {
         name: c.name,
-        type: c.type as 'TABLE' | 'BAR_CHART' | 'LINE_CHART' | 'PIE_CHART' | 'KPI',
+        type: c.type,
         queryId,
         configuration: c.configuration,
       });

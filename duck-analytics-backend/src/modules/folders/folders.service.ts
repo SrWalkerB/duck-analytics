@@ -16,13 +16,17 @@ export class FoldersService {
   }
 
   async findOne(id: string, userId: string) {
-    const f = await this.prisma.folder.findFirst({ where: { id, userId, deletedAt: null } });
+    const f = await this.prisma.folder.findFirst({
+      where: { id, userId, deletedAt: null },
+    });
     if (!f) throw new NotFoundException('Folder not found');
     return f;
   }
 
   async create(userId: string, dto: CreateFolderDto) {
-    return this.prisma.folder.create({ data: { name: dto.name, userId, parentId: dto.parentId } });
+    return this.prisma.folder.create({
+      data: { name: dto.name, userId, parentId: dto.parentId },
+    });
   }
 
   async update(id: string, userId: string, dto: UpdateFolderDto) {
@@ -32,7 +36,10 @@ export class FoldersService {
 
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
-    return this.prisma.folder.update({ where: { id }, data: { deletedAt: new Date() } });
+    return this.prisma.folder.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 
   async move(id: string, userId: string, parentId: string | null) {

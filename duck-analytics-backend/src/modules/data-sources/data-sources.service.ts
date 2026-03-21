@@ -55,12 +55,20 @@ export class DataSourcesService {
 
   async remove(id: string, userId: string) {
     await this.findOne(id, userId);
-    return this.prisma.dataSource.update({ where: { id }, data: { deletedAt: new Date() } });
+    return this.prisma.dataSource.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
   }
 
   async testConnection(id: string, userId: string) {
     const ds = await this.findOne(id, userId);
     await this.mongodb.testConnection(ds.connectionString, ds.database);
+    return { ok: true };
+  }
+
+  async testRawConnection(connectionString: string, database: string) {
+    await this.mongodb.testRawConnection(connectionString, database);
     return { ok: true };
   }
 
@@ -71,7 +79,11 @@ export class DataSourcesService {
     return { collections };
   }
 
-  async getCollectionSchema(id: string, collectionName: string, userId: string) {
+  async getCollectionSchema(
+    id: string,
+    collectionName: string,
+    userId: string,
+  ) {
     const ds = await this.findOne(id, userId);
     const db = await this.mongodb.getDb(ds.connectionString, ds.database);
     const schema = await this.introspection.inferSchema(db, collectionName);

@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Body,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, UseGuards } from '@nestjs/common';
 import { AIService } from './ai.service';
 import type { GeneratedDashboard } from './ai.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -46,7 +39,10 @@ export class AIController {
 
   @Post('generate-dashboard/apply')
   applyDashboard(@CurrentUser() userId: string, @Body() dto: object) {
-    const { dataSourceId, preview } = dto as { dataSourceId: string; preview: GeneratedDashboard };
+    const { dataSourceId, preview } = dto as {
+      dataSourceId: string;
+      preview: GeneratedDashboard;
+    };
     return this.service.applyGeneratedDashboard(userId, dataSourceId, preview);
   }
 }
