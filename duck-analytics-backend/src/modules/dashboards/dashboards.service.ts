@@ -5,6 +5,12 @@ import type { CreateDashboardDto } from './dto/create-dashboard.dto';
 import type { UpdateDashboardDto } from './dto/update-dashboard.dto';
 import type { AddDashboardComponentDto } from './dto/add-dashboard-component.dto';
 import type { UpdateLayoutDto } from './dto/update-layout.dto';
+import type { QueryFilter } from '../queries/query-builder.service';
+
+interface TargetMapping {
+  componentId: string;
+  targetField: string;
+}
 
 @Injectable()
 export class DashboardsService {
@@ -31,7 +37,15 @@ export class DashboardsService {
     const d = await this.prisma.dashboard.findFirst({
       where: { id, userId, deletedAt: null },
       include: {
-        dashboardComponents: { include: { component: true } },
+        dashboardComponents: {
+          include: {
+            component: {
+              include: {
+                query: { select: { id: true, collection: true, dataSourceId: true } },
+              },
+            },
+          },
+        },
         dashboardFilters: true,
       },
     });
@@ -90,6 +104,7 @@ export class DashboardsService {
         h: dto.h ?? 4,
         title: dto.title,
         backgroundColor: dto.backgroundColor,
+        tabId: dto.tabId,
       },
     });
   }
@@ -108,25 +123,64 @@ export class DashboardsService {
     const updates = dto.layout.map((item) =>
       this.prisma.dashboardComponent.update({
         where: { id: item.id },
-        data: { x: item.x, y: item.y, w: item.w, h: item.h },
+        data: {
+          x: item.x,
+          y: item.y,
+          w: item.w,
+          h: item.h,
+          ...(item.tabId !== undefined && { tabId: item.tabId }),
+          ...(item.title !== undefined && { title: item.title }),
+          ...(item.description !== undefined && {
+            description: item.description,
+          }),
+        },
       }),
     );
     await this.prisma.$transaction(updates);
     return { ok: true };
   }
 
-  async getData(dashboardId: string, userId: string) {
+  async getData(
+    dashboardId: string,
+    userId: string,
+    activeFilters: Record<string, unknown[]> = {},
+  ) {
     const dashboard = await this.findOne(dashboardId, userId);
+    const filters = dashboard.dashboardFilters;
     const results: Record<string, unknown> = {};
+
     await Promise.all(
       dashboard.dashboardComponents.map(async (dc) => {
+        // Build injected filters for this component
+        const injected: QueryFilter[] = [];
+        for (const filter of filters) {
+          const selected = activeFilters[filter.id];
+          if (!selected || selected.length === 0) continue;
+          const mappings = (filter.targetMappings as TargetMapping[]) ?? [];
+          const mapping = mappings.find(
+            (m) => m.componentId === dc.componentId,
+          );
+          if (!mapping) continue;
+          injected.push({
+            field: mapping.targetField,
+            operator: 'in',
+            value: selected,
+          });
+        }
+
         try {
           results[dc.id] = await this.components.getData(
             dc.componentId,
             userId,
+            injected.length > 0 ? injected : undefined,
           );
-        } catch {
-          results[dc.id] = { error: 'Failed to load data' };
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(
+            `[Dashboard getData] component ${dc.componentId} failed:`,
+            msg,
+          );
+          results[dc.id] = { error: msg };
         }
       }),
     );

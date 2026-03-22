@@ -11,7 +11,7 @@ export interface FieldSchema {
 export class MongoDBIntrospectionService {
   async listCollections(db: Db): Promise<string[]> {
     const collections = await db.listCollections().toArray();
-    return collections.map((c) => c.name);
+    return collections.map((c) => c.name).sort((a, b) => a.localeCompare(b));
   }
 
   async inferSchema(db: Db, collection: string): Promise<FieldSchema[]> {

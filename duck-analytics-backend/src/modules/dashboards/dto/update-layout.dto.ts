@@ -8,6 +8,9 @@ export const updateLayoutSchema = z.object({
       y: z.number(),
       w: z.number(),
       h: z.number(),
+      tabId: z.string().optional().nullable(),
+      title: z.string().optional().nullable(),
+      description: z.string().optional().nullable(),
     }),
   ),
 });

@@ -8,6 +8,7 @@ export const addDashboardComponentSchema = z.object({
   h: z.number().default(4),
   title: z.string().optional(),
   backgroundColor: z.string().optional(),
+  tabId: z.string().optional(),
 });
 
 export type AddDashboardComponentDto = z.infer<

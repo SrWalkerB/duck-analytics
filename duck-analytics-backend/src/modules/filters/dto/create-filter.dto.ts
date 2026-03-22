@@ -8,7 +8,10 @@ export const createFilterSchema = z.object({
   collection: z.string().min(1),
   dataSourceId: z.string(),
   parentFilterId: z.string().optional(),
-  targetComponentIds: z.array(z.string()).default([]),
+  targetMappings: z.array(z.object({
+    componentId: z.string(),
+    targetField: z.string(),
+  })).default([]),
 });
 
 export type CreateFilterDto = z.infer<typeof createFilterSchema>;

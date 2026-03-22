@@ -1,10 +1,16 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/services/api'
 import type { Component } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   Table2,
   BarChart2,
@@ -13,7 +19,12 @@ import {
   Hash,
   Plus,
   Clock,
+  MoreHorizontal,
+  Copy,
+  Pencil,
+  Trash2,
 } from 'lucide-react'
+import { toast } from 'sonner'
 
 export const Route = createFileRoute('/_authenticated/questions/')({
   component: QuestionsPage,
@@ -36,9 +47,31 @@ const VIZ_LABEL: Record<string, string> = {
 }
 
 function QuestionsPage() {
+  const navigate = useNavigate()
+  const qc = useQueryClient()
+
   const { data: questions, isLoading } = useQuery<Component[]>({
     queryKey: ['questions'],
     queryFn: () => api.get('/v1/components').then((r) => r.data),
+  })
+
+  const duplicateMutation = useMutation({
+    mutationFn: (id: string) => api.post(`/v1/components/${id}/duplicate`),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['questions'] })
+      toast.success('Questão duplicada')
+      navigate({ to: '/questions/$id', params: { id: res.data.id } })
+    },
+    onError: () => toast.error('Falha ao duplicar'),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => api.delete(`/v1/components/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['questions'] })
+      toast.success('Questão removida')
+    },
+    onError: () => toast.error('Falha ao remover'),
   })
 
   return (
@@ -77,26 +110,67 @@ function QuestionsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {questions.map((q) => (
-            <Link key={q.id} to="/questions/$id" params={{ id: q.id }}>
-              <Card className="cursor-pointer transition-colors hover:border-foreground/30 hover:bg-muted/30">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="truncate font-medium">{q.name}</p>
+            <Card
+              key={q.id}
+              className="cursor-pointer transition-colors hover:border-foreground/30 hover:bg-muted/30"
+              onClick={() => navigate({ to: '/questions/$id', params: { id: q.id } })}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="truncate font-medium">{q.name}</p>
+                  <div className="flex shrink-0 items-center gap-1">
                     <Badge
                       variant="secondary"
-                      className="flex shrink-0 items-center gap-1 text-xs"
+                      className="flex items-center gap-1 text-xs"
                     >
                       {VIZ_ICON[q.type]}
                       {VIZ_LABEL[q.type] ?? q.type}
                     </Badge>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-6 text-muted-foreground"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreHorizontal size={14} />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            navigate({ to: '/questions/$id', params: { id: q.id } })
+                          }
+                        >
+                          <Pencil size={13} className="mr-2" />
+                          Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => duplicateMutation.mutate(q.id)}
+                          disabled={duplicateMutation.isPending}
+                        >
+                          <Copy size={13} className="mr-2" />
+                          Duplicar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => deleteMutation.mutate(q.id)}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 size={13} className="mr-2" />
+                          Remover
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                  <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                    <Clock size={11} />
-                    {new Date(q.updatedAt).toLocaleDateString()}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+                </div>
+                <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock size={11} />
+                  {new Date(q.updatedAt).toLocaleDateString()}
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}

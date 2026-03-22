@@ -27,6 +27,7 @@ import type {
   Component,
   Query,
   PipelineConfiguration,
+  ChartDisplayConfig,
 } from '@/types'
 import { isPipelineConfiguration } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -43,6 +44,7 @@ import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ChartRenderer } from '@/components/visualizations/ChartRenderer'
+import { ChartOptionsPanel } from '@/components/visualizations/ChartOptionsPanel'
 import { ResultsTable } from '@/components/question-editor/ResultsTable'
 import { CollectionCombobox } from '@/components/question-editor/CollectionCombobox'
 import { PipelineBuilder } from '@/components/question-editor/PipelineBuilder'
@@ -180,6 +182,9 @@ export function QuestionEditor({ initialQuery, initialComponent }: Props) {
   const [vizLabel, setVizLabel] = useState(
     (initialComponent?.configuration['label'] as string) ?? '',
   )
+  const [displayConfig, setDisplayConfig] = useState<ChartDisplayConfig>(
+    (initialComponent?.configuration['display'] as ChartDisplayConfig) ?? {},
+  )
 
   // Results
   const [results, setResults] = useState<Record<string, unknown>[] | null>(null)
@@ -298,7 +303,7 @@ export function QuestionEditor({ initialQuery, initialComponent }: Props) {
     }
     setIsSaving(true)
     try {
-      const vizConf = { xField, yField, label: vizLabel }
+      const vizConf = { xField, yField, label: vizLabel, display: displayConfig }
       let queryId = initialQuery?.id
 
       if (initialQuery) {
@@ -746,6 +751,15 @@ export function QuestionEditor({ initialQuery, initialComponent }: Props) {
                       </div>
                     )}
                   </div>
+
+                  <ChartOptionsPanel
+                    type={vizType}
+                    data={results ?? []}
+                    xField={xField}
+                    yField={yField}
+                    config={displayConfig}
+                    onChange={setDisplayConfig}
+                  />
                 </>
               )}
             </div>
@@ -812,7 +826,7 @@ export function QuestionEditor({ initialQuery, initialComponent }: Props) {
                     <ChartRenderer
                       type={vizType}
                       data={results}
-                      configuration={{ xField, yField, label: vizLabel }}
+                      configuration={{ xField, yField, label: vizLabel, display: displayConfig }}
                     />
                   )}
                 </div>

@@ -85,4 +85,15 @@ export class DashboardsController {
   getData(@Param('id') id: string, @CurrentUser() userId: string) {
     return this.service.getData(id, userId);
   }
+
+  @Post(':id/data')
+  getDataFiltered(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+    @Body() dto: object,
+  ) {
+    const activeFilters =
+      (dto as { activeFilters?: Record<string, unknown[]> }).activeFilters ?? {};
+    return this.service.getData(id, userId, activeFilters);
+  }
 }

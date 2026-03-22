@@ -36,14 +36,25 @@ export class FiltersService {
         collection: dto.collection,
         dataSourceId: dto.dataSourceId,
         parentFilterId: dto.parentFilterId,
-        targetComponentIds: dto.targetComponentIds ?? [],
+        targetMappings: (dto.targetMappings ?? []) as object,
       },
     });
   }
 
   async update(id: string, dto: UpdateFilterDto) {
     await this.findOne(id);
-    return this.prisma.dashboardFilter.update({ where: { id }, data: dto });
+    return this.prisma.dashboardFilter.update({
+      where: { id },
+      data: {
+        ...(dto.label !== undefined && { label: dto.label }),
+        ...(dto.type !== undefined && { type: dto.type }),
+        ...(dto.field !== undefined && { field: dto.field }),
+        ...(dto.collection !== undefined && { collection: dto.collection }),
+        ...(dto.dataSourceId !== undefined && { dataSourceId: dto.dataSourceId }),
+        ...(dto.parentFilterId !== undefined && { parentFilterId: dto.parentFilterId }),
+        ...(dto.targetMappings !== undefined && { targetMappings: dto.targetMappings as object }),
+      },
+    });
   }
 
   async remove(id: string) {
@@ -66,7 +77,13 @@ export class FiltersService {
 
     if (parentValue !== undefined && filter.parentFilterId) {
       const parent = await this.findOne(filter.parentFilterId);
-      pipeline.push({ $match: { [parent.field]: parentValue } });
+      // Support comma-separated values for multi-select parent filters
+      const values = typeof parentValue === 'string' && parentValue.includes(',')
+        ? parentValue.split(',')
+        : parentValue;
+      pipeline.push({
+        $match: { [parent.field]: Array.isArray(values) ? { $in: values } : values },
+      });
     }
 
     if (search) {

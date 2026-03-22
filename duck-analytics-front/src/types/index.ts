@@ -142,6 +142,25 @@ export function isPipelineConfiguration(
   )
 }
 
+export interface ChartDisplayConfig {
+  colors?: string[]
+  xAxisLabel?: string
+  yAxisLabel?: string
+  showXLabel?: boolean
+  showYLabel?: boolean
+  showGrid?: boolean
+  showLegend?: boolean
+  showDataLabels?: boolean
+  innerRadius?: number
+  labelType?: 'value' | 'percentage' | 'name' | 'none'
+  // KPI specific
+  prefix?: string
+  suffix?: string
+  compact?: boolean
+  labelPosition?: 'top' | 'bottom'
+  fontSize?: number
+}
+
 export interface Component {
   id: string
   name: string
@@ -151,6 +170,13 @@ export interface Component {
   userId: string
   createdAt: string
   updatedAt: string
+  query?: { id: string; collection: string; dataSourceId: string }
+}
+
+export interface DashboardTab {
+  id: string
+  name: string
+  order: number
 }
 
 export interface DashboardComponent {
@@ -163,7 +189,14 @@ export interface DashboardComponent {
   w: number
   h: number
   title: string | null
+  description: string | null
   backgroundColor: string | null
+  tabId: string | null
+}
+
+export interface FilterTargetMapping {
+  componentId: string
+  targetField: string
 }
 
 export interface DashboardFilter {
@@ -175,7 +208,7 @@ export interface DashboardFilter {
   collection: string
   dataSourceId: string
   parentFilterId: string | null
-  targetComponentIds: string[]
+  targetMappings: FilterTargetMapping[]
 }
 
 export interface Dashboard {

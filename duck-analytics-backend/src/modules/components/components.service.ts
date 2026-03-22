@@ -3,6 +3,7 @@ import { PrismaService } from '../../lib/prisma/prisma.service';
 import { QueriesService } from '../queries/queries.service';
 import type { CreateComponentDto } from './dto/create-component.dto';
 import type { UpdateComponentDto } from './dto/update-component.dto';
+import type { QueryFilter } from '../queries/query-builder.service';
 
 @Injectable()
 export class ComponentsService {
@@ -62,8 +63,37 @@ export class ComponentsService {
     });
   }
 
-  async getData(id: string, userId: string) {
+  async duplicate(id: string, userId: string) {
     const component = await this.findOne(id, userId);
-    return this.queries.execute(component.queryId, userId);
+    const query = await this.prisma.query.findFirst({
+      where: { id: component.queryId, userId, deletedAt: null },
+    });
+    if (!query) throw new NotFoundException('Query not found');
+
+    const newQuery = await this.prisma.query.create({
+      data: {
+        name: `${query.name} (cópia)`,
+        dataSourceId: query.dataSourceId,
+        collection: query.collection,
+        configuration: query.configuration as object,
+        pipeline: query.pipeline as object[],
+        userId,
+      },
+    });
+
+    return this.prisma.component.create({
+      data: {
+        name: `${component.name} (cópia)`,
+        type: component.type,
+        queryId: newQuery.id,
+        configuration: component.configuration as object,
+        userId,
+      },
+    });
+  }
+
+  async getData(id: string, userId: string, injectedFilters?: QueryFilter[]) {
+    const component = await this.findOne(id, userId);
+    return this.queries.execute(component.queryId, userId, injectedFilters);
   }
 }

@@ -166,7 +166,9 @@ model DashboardComponent {
   w               Int       @default(6)
   h               Int       @default(4)
   title           String?
+  description     String?
   backgroundColor String?   @map("background_color")
+  tabId           String?   @map("tab_id")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
@@ -186,7 +188,7 @@ model DashboardFilter {
   parentFilterId     String?     @map("parent_filter_id")
   parent             DashboardFilter?  @relation("FilterChain", fields: [parentFilterId], references: [id])
   children           DashboardFilter[] @relation("FilterChain")
-  targetComponentIds String[]    @map("target_component_ids")
+  targetMappings     Json        @default("[]") @map("target_mappings")
   createdAt          DateTime    @default(now()) @map("created_at")
   updatedAt          DateTime    @updatedAt @map("updated_at")
 

@@ -48,6 +48,11 @@ export class ComponentsController {
     return this.service.remove(id, userId);
   }
 
+  @Post(':id/duplicate')
+  duplicate(@Param('id') id: string, @CurrentUser() userId: string) {
+    return this.service.duplicate(id, userId);
+  }
+
   @Get(':id/data')
   getData(@Param('id') id: string, @CurrentUser() userId: string) {
     return this.service.getData(id, userId);
