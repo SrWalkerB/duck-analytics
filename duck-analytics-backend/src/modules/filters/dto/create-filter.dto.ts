@@ -12,6 +12,8 @@ export const createFilterSchema = z.object({
     componentId: z.string(),
     targetField: z.string(),
   })).default([]),
+  valueField: z.string().optional(),
+  queryId: z.string().optional(),
 });
 
 export type CreateFilterDto = z.infer<typeof createFilterSchema>;

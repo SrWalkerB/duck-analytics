@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash2 } from 'lucide-react'
+import { Trash2, RefreshCw, ExternalLink } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,6 +24,7 @@ import type {
   DashboardComponent,
   FilterTargetMapping,
   FieldSchema,
+  Query,
 } from '@/types'
 
 interface Props {
@@ -45,9 +47,12 @@ export function FilterEditorPanel({
   const qc = useQueryClient()
 
   const [label, setLabel] = useState('')
+  const [sourceMode, setSourceMode] = useState<'simple' | 'query'>('simple')
   const [dataSourceId, setDataSourceId] = useState('')
   const [collection, setCollection] = useState('')
   const [field, setField] = useState('')
+  const [valueField, setValueField] = useState<string>('')
+  const [selectedQueryId, setSelectedQueryId] = useState<string>('')
   const [filterType, setFilterType] = useState<string>('MULTI_SELECT')
   const [parentFilterId, setParentFilterId] = useState<string>('')
   const [targetMappings, setTargetMappings] = useState<
@@ -58,9 +63,12 @@ export function FilterEditorPanel({
   useEffect(() => {
     if (editingFilter) {
       setLabel(editingFilter.label)
+      setSourceMode(editingFilter.queryId ? 'query' : 'simple')
       setDataSourceId(editingFilter.dataSourceId)
       setCollection(editingFilter.collection)
       setField(editingFilter.field)
+      setValueField(editingFilter.valueField ?? '')
+      setSelectedQueryId(editingFilter.queryId ?? '')
       setFilterType(editingFilter.type)
       setParentFilterId(editingFilter.parentFilterId ?? '')
       const mappings: Record<string, { enabled: boolean; targetField: string }> = {}
@@ -70,9 +78,12 @@ export function FilterEditorPanel({
       setTargetMappings(mappings)
     } else {
       setLabel('')
+      setSourceMode('simple')
       setDataSourceId('')
       setCollection('')
       setField('')
+      setValueField('')
+      setSelectedQueryId('')
       setFilterType('MULTI_SELECT')
       setParentFilterId('')
       setTargetMappings({})
@@ -101,6 +112,29 @@ export function FilterEditorPanel({
     enabled: open && !!dataSourceId && !!collection,
   })
 
+  const {
+    data: queries,
+    refetch: refetchQueries,
+    isFetching: isFetchingQueries,
+  } = useQuery<Query[]>({
+    queryKey: ['queries'],
+    queryFn: () => api.get('/v1/queries').then((r) => r.data),
+    enabled: open && sourceMode === 'query',
+  })
+
+  // When in query mode with a selected query, derive dataSourceId/collection/field from the query
+  const selectedQuery = queries?.find((q) => q.id === selectedQueryId)
+
+  // Fetch schema for the selected query's collection (for the "Coluna de valores" field select)
+  const { data: querySchemaData } = useQuery<{ fields: FieldSchema[] }>({
+    queryKey: ['ds-schema', selectedQuery?.dataSourceId, selectedQuery?.collection],
+    queryFn: () =>
+      api
+        .get(`/v1/data-sources/${selectedQuery!.dataSourceId}/collections/${selectedQuery!.collection}/schema`)
+        .then((r) => r.data),
+    enabled: open && sourceMode === 'query' && !!selectedQuery,
+  })
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const mappings: FilterTargetMapping[] = []
@@ -110,14 +144,17 @@ export function FilterEditorPanel({
         }
       }
 
+      const isQuery = sourceMode === 'query' && selectedQuery
       const payload = {
         label,
         type: filterType,
         field,
-        collection,
-        dataSourceId,
+        collection: isQuery ? selectedQuery.collection : collection,
+        dataSourceId: isQuery ? selectedQuery.dataSourceId : dataSourceId,
         parentFilterId: parentFilterId || undefined,
         targetMappings: mappings,
+        valueField: valueField || undefined,
+        queryId: isQuery ? selectedQueryId : undefined,
       }
 
       if (editingFilter) {
@@ -152,7 +189,11 @@ export function FilterEditorPanel({
 
   const collections = [...(collectionsData?.collections ?? [])].sort((a, b) => a.localeCompare(b))
   const fields = schemaData?.fields ?? []
-  const canSave = label.trim() && dataSourceId && collection && field
+  const queryFields = querySchemaData?.fields ?? []
+  const canSave =
+    sourceMode === 'query'
+      ? !!(label.trim() && selectedQueryId && field)
+      : !!(label.trim() && dataSourceId && collection && field)
   const availableParents = existingFilters.filter(
     (f) => f.id !== editingFilter?.id,
   )
@@ -199,73 +240,245 @@ export function FilterEditorPanel({
             />
           </div>
 
-          {/* Data Source */}
+          {/* Source mode toggle */}
           <div className="space-y-1.5">
-            <Label className="text-xs">Data Source</Label>
-            <Select
-              value={dataSourceId}
-              onValueChange={(v) => {
-                setDataSourceId(v)
-                setCollection('')
-                setField('')
-              }}
-            >
-              <SelectTrigger className="h-8 text-sm">
-                <SelectValue placeholder="Selecionar..." />
-              </SelectTrigger>
-              <SelectContent>
-                {(dataSources ?? []).map((ds) => (
-                  <SelectItem key={ds.id} value={ds.id}>
-                    {ds.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Collection */}
-          {dataSourceId && (
-            <div className="space-y-1.5">
-              <Label className="text-xs">Collection</Label>
-              <Select
-                value={collection}
-                onValueChange={(v) => {
-                  setCollection(v)
-                  setField('')
+            <Label className="text-xs">Fonte dos valores</Label>
+            <div className="flex gap-1 rounded-md border p-0.5">
+              <button
+                type="button"
+                className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                  sourceMode === 'simple'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                onClick={() => {
+                  setSourceMode('simple')
+                  setSelectedQueryId('')
+                  setValueField('')
                 }}
               >
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Selecionar..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {collections.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                Simples
+              </button>
+              <button
+                type="button"
+                className={`flex-1 rounded px-2 py-1 text-xs font-medium transition-colors ${
+                  sourceMode === 'query'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                onClick={() => {
+                  setSourceMode('query')
+                  setDataSourceId('')
+                  setCollection('')
+                  setField('')
+                  setValueField('')
+                }}
+              >
+                Query customizada
+              </button>
             </div>
-          )}
+          </div>
 
-          {/* Field */}
-          {collection && (
-            <div className="space-y-1.5">
-              <Label className="text-xs">Campo</Label>
-              <Select value={field} onValueChange={setField}>
-                <SelectTrigger className="h-8 text-sm">
-                  <SelectValue placeholder="Selecionar..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {fields.map((f) => (
-                    <SelectItem key={f.name} value={f.name}>
-                      {f.name}{' '}
-                      <span className="text-muted-foreground">({f.type})</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {sourceMode === 'simple' ? (
+            <>
+              {/* Data Source */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Data Source</Label>
+                <Select
+                  value={dataSourceId}
+                  onValueChange={(v) => {
+                    setDataSourceId(v)
+                    setCollection('')
+                    setField('')
+                  }}
+                >
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue placeholder="Selecionar..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(dataSources ?? []).map((ds) => (
+                      <SelectItem key={ds.id} value={ds.id}>
+                        {ds.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Collection */}
+              {dataSourceId && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Collection</Label>
+                  <Select
+                    value={collection}
+                    onValueChange={(v) => {
+                      setCollection(v)
+                      setField('')
+                    }}
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="Selecionar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {collections.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Label field */}
+              {collection && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Coluna de exibição</Label>
+                  <p className="text-[10px] text-muted-foreground">
+                    O que será mostrado no dropdown do filtro
+                  </p>
+                  <Select value={field} onValueChange={setField}>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="Selecionar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {fields.map((f) => (
+                        <SelectItem key={f.name} value={f.name}>
+                          {f.name}{' '}
+                          <span className="text-muted-foreground">({f.type})</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Value field */}
+              {collection && field && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Coluna de valor</Label>
+                  <p className="text-[10px] text-muted-foreground">
+                    O que será enviado para os componentes (deixe vazio para usar a mesma coluna)
+                  </p>
+                  <Select
+                    value={valueField || '__same__'}
+                    onValueChange={(v) => setValueField(v === '__same__' ? '' : v)}
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__same__">Mesma coluna ({field})</SelectItem>
+                      {fields
+                        .filter((f) => f.name !== field)
+                        .map((f) => (
+                          <SelectItem key={f.name} value={f.name}>
+                            {f.name}{' '}
+                            <span className="text-muted-foreground">({f.type})</span>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Query select */}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Query</Label>
+                <div className="flex gap-1">
+                  <Select
+                    value={selectedQueryId}
+                    onValueChange={(v) => {
+                      setSelectedQueryId(v)
+                      setField('')
+                    }}
+                  >
+                    <SelectTrigger className="h-8 flex-1 text-sm">
+                      <SelectValue placeholder="Selecionar query..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(queries ?? []).map((q) => (
+                        <SelectItem key={q.id} value={q.id}>
+                          {q.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => refetchQueries()}
+                    disabled={isFetchingQueries}
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${isFetchingQueries ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
+                <Link
+                  to="/questions"
+                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                  target="_blank"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  Criar nova query
+                </Link>
+              </div>
+
+              {/* Label column from query */}
+              {selectedQuery && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Coluna de exibição</Label>
+                  <p className="text-[10px] text-muted-foreground">
+                    O que será mostrado no dropdown do filtro
+                  </p>
+                  <Select value={field} onValueChange={setField}>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="Selecionar coluna..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {queryFields.map((f) => (
+                        <SelectItem key={f.name} value={f.name}>
+                          {f.name}{' '}
+                          <span className="text-muted-foreground">({f.type})</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Value column from query */}
+              {selectedQuery && field && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Coluna de valor</Label>
+                  <p className="text-[10px] text-muted-foreground">
+                    O que será enviado para os componentes (deixe vazio para usar a mesma coluna)
+                  </p>
+                  <Select
+                    value={valueField || '__same__'}
+                    onValueChange={(v) => setValueField(v === '__same__' ? '' : v)}
+                  >
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__same__">Mesma coluna ({field})</SelectItem>
+                      {queryFields
+                        .filter((f) => f.name !== field)
+                        .map((f) => (
+                          <SelectItem key={f.name} value={f.name}>
+                            {f.name}{' '}
+                            <span className="text-muted-foreground">({f.type})</span>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </>
           )}
 
           {/* Filter type */}
@@ -334,7 +547,7 @@ export function FilterEditorPanel({
                     <>
                       {field && (
                         <p className="text-[10px] text-muted-foreground">
-                          Filtro envia: <strong>{field}</strong> → Componente recebe:
+                          Filtro envia: <strong>{valueField || field}</strong> → Componente recebe:
                         </p>
                       )}
                       <TargetFieldSelect

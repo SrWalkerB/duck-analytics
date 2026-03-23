@@ -134,7 +134,7 @@ function FilterDropdown({
     : undefined
 
   const { data: valuesData, isLoading } = useQuery<{
-    values: unknown[]
+    items: { label: string; value: unknown }[]
     page: number
     pageSize: number
   }>({
@@ -158,7 +158,7 @@ function FilterDropdown({
     enabled: open && !disabled,
   })
 
-  const values = valuesData?.values ?? []
+  const items = valuesData?.items ?? []
   const count = selectedValues.length
 
   function toggleValue(val: unknown) {
@@ -172,7 +172,7 @@ function FilterDropdown({
   }
 
   function selectAll() {
-    onChange(values)
+    onChange(items.map((i) => i.value))
   }
 
   function clearSelection() {
@@ -221,13 +221,13 @@ function FilterDropdown({
             <div className="p-3 text-center text-xs text-muted-foreground">
               Carregando...
             </div>
-          ) : values.length === 0 ? (
+          ) : items.length === 0 ? (
             <div className="p-3 text-center text-xs text-muted-foreground">
               Nenhum valor encontrado
             </div>
           ) : (
-            values.map((val) => {
-              const strVal = String(val)
+            items.map((item) => {
+              const strVal = String(item.value)
               const checked = selectedValues.some(
                 (v) => String(v) === strVal,
               )
@@ -238,15 +238,15 @@ function FilterDropdown({
                 >
                   <Checkbox
                     checked={checked}
-                    onCheckedChange={() => toggleValue(val)}
+                    onCheckedChange={() => toggleValue(item.value)}
                   />
-                  <span className="truncate">{strVal}</span>
+                  <span className="truncate">{item.label}</span>
                 </label>
               )
             })
           )}
         </div>
-        {values.length > 0 && (
+        {items.length > 0 && (
           <div className="flex justify-between border-t px-2 py-1.5">
             <Button
               size="sm"

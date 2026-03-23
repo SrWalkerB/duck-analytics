@@ -35,6 +35,11 @@ export class FiltersController {
     return this.service.update(filterId, dto as UpdateFilterDto);
   }
 
+  @Put('reorder')
+  reorder(@Body() body: object) {
+    return this.service.reorder((body as { filterIds: string[] }).filterIds);
+  }
+
   @Delete(':filterId')
   remove(@Param('filterId') filterId: string) {
     return this.service.remove(filterId);

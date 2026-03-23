@@ -20,8 +20,18 @@ export type DashboardFilterModel = runtime.Types.Result.DefaultSelection<Prisma.
 
 export type AggregateDashboardFilter = {
   _count: DashboardFilterCountAggregateOutputType | null
+  _avg: DashboardFilterAvgAggregateOutputType | null
+  _sum: DashboardFilterSumAggregateOutputType | null
   _min: DashboardFilterMinAggregateOutputType | null
   _max: DashboardFilterMaxAggregateOutputType | null
+}
+
+export type DashboardFilterAvgAggregateOutputType = {
+  order: number | null
+}
+
+export type DashboardFilterSumAggregateOutputType = {
+  order: number | null
 }
 
 export type DashboardFilterMinAggregateOutputType = {
@@ -33,6 +43,9 @@ export type DashboardFilterMinAggregateOutputType = {
   collection: string | null
   dataSourceId: string | null
   parentFilterId: string | null
+  valueField: string | null
+  queryId: string | null
+  order: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -46,6 +59,9 @@ export type DashboardFilterMaxAggregateOutputType = {
   collection: string | null
   dataSourceId: string | null
   parentFilterId: string | null
+  valueField: string | null
+  queryId: string | null
+  order: number | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -60,11 +76,22 @@ export type DashboardFilterCountAggregateOutputType = {
   dataSourceId: number
   parentFilterId: number
   targetMappings: number
+  valueField: number
+  queryId: number
+  order: number
   createdAt: number
   updatedAt: number
   _all: number
 }
 
+
+export type DashboardFilterAvgAggregateInputType = {
+  order?: true
+}
+
+export type DashboardFilterSumAggregateInputType = {
+  order?: true
+}
 
 export type DashboardFilterMinAggregateInputType = {
   id?: true
@@ -75,6 +102,9 @@ export type DashboardFilterMinAggregateInputType = {
   collection?: true
   dataSourceId?: true
   parentFilterId?: true
+  valueField?: true
+  queryId?: true
+  order?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -88,6 +118,9 @@ export type DashboardFilterMaxAggregateInputType = {
   collection?: true
   dataSourceId?: true
   parentFilterId?: true
+  valueField?: true
+  queryId?: true
+  order?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -102,6 +135,9 @@ export type DashboardFilterCountAggregateInputType = {
   dataSourceId?: true
   parentFilterId?: true
   targetMappings?: true
+  valueField?: true
+  queryId?: true
+  order?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -145,6 +181,18 @@ export type DashboardFilterAggregateArgs<ExtArgs extends runtime.Types.Extension
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: DashboardFilterAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: DashboardFilterSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: DashboardFilterMinAggregateInputType
@@ -175,6 +223,8 @@ export type DashboardFilterGroupByArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   _count?: DashboardFilterCountAggregateInputType | true
+  _avg?: DashboardFilterAvgAggregateInputType
+  _sum?: DashboardFilterSumAggregateInputType
   _min?: DashboardFilterMinAggregateInputType
   _max?: DashboardFilterMaxAggregateInputType
 }
@@ -189,9 +239,14 @@ export type DashboardFilterGroupByOutputType = {
   dataSourceId: string
   parentFilterId: string | null
   targetMappings: runtime.JsonValue
+  valueField: string | null
+  queryId: string | null
+  order: number
   createdAt: Date
   updatedAt: Date
   _count: DashboardFilterCountAggregateOutputType | null
+  _avg: DashboardFilterAvgAggregateOutputType | null
+  _sum: DashboardFilterSumAggregateOutputType | null
   _min: DashboardFilterMinAggregateOutputType | null
   _max: DashboardFilterMaxAggregateOutputType | null
 }
@@ -224,12 +279,16 @@ export type DashboardFilterWhereInput = {
   dataSourceId?: Prisma.StringFilter<"DashboardFilter"> | string
   parentFilterId?: Prisma.StringNullableFilter<"DashboardFilter"> | string | null
   targetMappings?: Prisma.JsonFilter<"DashboardFilter">
+  valueField?: Prisma.StringNullableFilter<"DashboardFilter"> | string | null
+  queryId?: Prisma.StringNullableFilter<"DashboardFilter"> | string | null
+  order?: Prisma.IntFilter<"DashboardFilter"> | number
   createdAt?: Prisma.DateTimeFilter<"DashboardFilter"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DashboardFilter"> | Date | string
   dashboard?: Prisma.XOR<Prisma.DashboardScalarRelationFilter, Prisma.DashboardWhereInput>
   dataSource?: Prisma.XOR<Prisma.DataSourceScalarRelationFilter, Prisma.DataSourceWhereInput>
   parent?: Prisma.XOR<Prisma.DashboardFilterNullableScalarRelationFilter, Prisma.DashboardFilterWhereInput> | null
   children?: Prisma.DashboardFilterListRelationFilter
+  query?: Prisma.XOR<Prisma.QueryNullableScalarRelationFilter, Prisma.QueryWhereInput> | null
 }
 
 export type DashboardFilterOrderByWithRelationInput = {
@@ -242,12 +301,16 @@ export type DashboardFilterOrderByWithRelationInput = {
   dataSourceId?: Prisma.SortOrder
   parentFilterId?: Prisma.SortOrderInput | Prisma.SortOrder
   targetMappings?: Prisma.SortOrder
+  valueField?: Prisma.SortOrderInput | Prisma.SortOrder
+  queryId?: Prisma.SortOrderInput | Prisma.SortOrder
+  order?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   dashboard?: Prisma.DashboardOrderByWithRelationInput
   dataSource?: Prisma.DataSourceOrderByWithRelationInput
   parent?: Prisma.DashboardFilterOrderByWithRelationInput
   children?: Prisma.DashboardFilterOrderByRelationAggregateInput
+  query?: Prisma.QueryOrderByWithRelationInput
 }
 
 export type DashboardFilterWhereUniqueInput = Prisma.AtLeast<{
@@ -263,12 +326,16 @@ export type DashboardFilterWhereUniqueInput = Prisma.AtLeast<{
   dataSourceId?: Prisma.StringFilter<"DashboardFilter"> | string
   parentFilterId?: Prisma.StringNullableFilter<"DashboardFilter"> | string | null
   targetMappings?: Prisma.JsonFilter<"DashboardFilter">
+  valueField?: Prisma.StringNullableFilter<"DashboardFilter"> | string | null
+  queryId?: Prisma.StringNullableFilter<"DashboardFilter"> | string | null
+  order?: Prisma.IntFilter<"DashboardFilter"> | number
   createdAt?: Prisma.DateTimeFilter<"DashboardFilter"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DashboardFilter"> | Date | string
   dashboard?: Prisma.XOR<Prisma.DashboardScalarRelationFilter, Prisma.DashboardWhereInput>
   dataSource?: Prisma.XOR<Prisma.DataSourceScalarRelationFilter, Prisma.DataSourceWhereInput>
   parent?: Prisma.XOR<Prisma.DashboardFilterNullableScalarRelationFilter, Prisma.DashboardFilterWhereInput> | null
   children?: Prisma.DashboardFilterListRelationFilter
+  query?: Prisma.XOR<Prisma.QueryNullableScalarRelationFilter, Prisma.QueryWhereInput> | null
 }, "id">
 
 export type DashboardFilterOrderByWithAggregationInput = {
@@ -281,11 +348,16 @@ export type DashboardFilterOrderByWithAggregationInput = {
   dataSourceId?: Prisma.SortOrder
   parentFilterId?: Prisma.SortOrderInput | Prisma.SortOrder
   targetMappings?: Prisma.SortOrder
+  valueField?: Prisma.SortOrderInput | Prisma.SortOrder
+  queryId?: Prisma.SortOrderInput | Prisma.SortOrder
+  order?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.DashboardFilterCountOrderByAggregateInput
+  _avg?: Prisma.DashboardFilterAvgOrderByAggregateInput
   _max?: Prisma.DashboardFilterMaxOrderByAggregateInput
   _min?: Prisma.DashboardFilterMinOrderByAggregateInput
+  _sum?: Prisma.DashboardFilterSumOrderByAggregateInput
 }
 
 export type DashboardFilterScalarWhereWithAggregatesInput = {
@@ -301,6 +373,9 @@ export type DashboardFilterScalarWhereWithAggregatesInput = {
   dataSourceId?: Prisma.StringWithAggregatesFilter<"DashboardFilter"> | string
   parentFilterId?: Prisma.StringNullableWithAggregatesFilter<"DashboardFilter"> | string | null
   targetMappings?: Prisma.JsonWithAggregatesFilter<"DashboardFilter">
+  valueField?: Prisma.StringNullableWithAggregatesFilter<"DashboardFilter"> | string | null
+  queryId?: Prisma.StringNullableWithAggregatesFilter<"DashboardFilter"> | string | null
+  order?: Prisma.IntWithAggregatesFilter<"DashboardFilter"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"DashboardFilter"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"DashboardFilter"> | Date | string
 }
@@ -312,12 +387,15 @@ export type DashboardFilterCreateInput = {
   field: string
   collection: string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  order?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   dashboard: Prisma.DashboardCreateNestedOneWithoutDashboardFiltersInput
   dataSource: Prisma.DataSourceCreateNestedOneWithoutDashboardFiltersInput
   parent?: Prisma.DashboardFilterCreateNestedOneWithoutChildrenInput
   children?: Prisma.DashboardFilterCreateNestedManyWithoutParentInput
+  query?: Prisma.QueryCreateNestedOneWithoutDashboardFiltersInput
 }
 
 export type DashboardFilterUncheckedCreateInput = {
@@ -330,6 +408,9 @@ export type DashboardFilterUncheckedCreateInput = {
   dataSourceId: string
   parentFilterId?: string | null
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  queryId?: string | null
+  order?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   children?: Prisma.DashboardFilterUncheckedCreateNestedManyWithoutParentInput
@@ -342,12 +423,15 @@ export type DashboardFilterUpdateInput = {
   field?: Prisma.StringFieldUpdateOperationsInput | string
   collection?: Prisma.StringFieldUpdateOperationsInput | string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dashboard?: Prisma.DashboardUpdateOneRequiredWithoutDashboardFiltersNestedInput
   dataSource?: Prisma.DataSourceUpdateOneRequiredWithoutDashboardFiltersNestedInput
   parent?: Prisma.DashboardFilterUpdateOneWithoutChildrenNestedInput
   children?: Prisma.DashboardFilterUpdateManyWithoutParentNestedInput
+  query?: Prisma.QueryUpdateOneWithoutDashboardFiltersNestedInput
 }
 
 export type DashboardFilterUncheckedUpdateInput = {
@@ -360,6 +444,9 @@ export type DashboardFilterUncheckedUpdateInput = {
   dataSourceId?: Prisma.StringFieldUpdateOperationsInput | string
   parentFilterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  queryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   children?: Prisma.DashboardFilterUncheckedUpdateManyWithoutParentNestedInput
@@ -375,6 +462,9 @@ export type DashboardFilterCreateManyInput = {
   dataSourceId: string
   parentFilterId?: string | null
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  queryId?: string | null
+  order?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -386,6 +476,8 @@ export type DashboardFilterUpdateManyMutationInput = {
   field?: Prisma.StringFieldUpdateOperationsInput | string
   collection?: Prisma.StringFieldUpdateOperationsInput | string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -400,6 +492,9 @@ export type DashboardFilterUncheckedUpdateManyInput = {
   dataSourceId?: Prisma.StringFieldUpdateOperationsInput | string
   parentFilterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  queryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -429,8 +524,15 @@ export type DashboardFilterCountOrderByAggregateInput = {
   dataSourceId?: Prisma.SortOrder
   parentFilterId?: Prisma.SortOrder
   targetMappings?: Prisma.SortOrder
+  valueField?: Prisma.SortOrder
+  queryId?: Prisma.SortOrder
+  order?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type DashboardFilterAvgOrderByAggregateInput = {
+  order?: Prisma.SortOrder
 }
 
 export type DashboardFilterMaxOrderByAggregateInput = {
@@ -442,6 +544,9 @@ export type DashboardFilterMaxOrderByAggregateInput = {
   collection?: Prisma.SortOrder
   dataSourceId?: Prisma.SortOrder
   parentFilterId?: Prisma.SortOrder
+  valueField?: Prisma.SortOrder
+  queryId?: Prisma.SortOrder
+  order?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -455,8 +560,15 @@ export type DashboardFilterMinOrderByAggregateInput = {
   collection?: Prisma.SortOrder
   dataSourceId?: Prisma.SortOrder
   parentFilterId?: Prisma.SortOrder
+  valueField?: Prisma.SortOrder
+  queryId?: Prisma.SortOrder
+  order?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+}
+
+export type DashboardFilterSumOrderByAggregateInput = {
+  order?: Prisma.SortOrder
 }
 
 export type DashboardFilterCreateNestedManyWithoutDataSourceInput = {
@@ -498,6 +610,48 @@ export type DashboardFilterUncheckedUpdateManyWithoutDataSourceNestedInput = {
   connect?: Prisma.DashboardFilterWhereUniqueInput | Prisma.DashboardFilterWhereUniqueInput[]
   update?: Prisma.DashboardFilterUpdateWithWhereUniqueWithoutDataSourceInput | Prisma.DashboardFilterUpdateWithWhereUniqueWithoutDataSourceInput[]
   updateMany?: Prisma.DashboardFilterUpdateManyWithWhereWithoutDataSourceInput | Prisma.DashboardFilterUpdateManyWithWhereWithoutDataSourceInput[]
+  deleteMany?: Prisma.DashboardFilterScalarWhereInput | Prisma.DashboardFilterScalarWhereInput[]
+}
+
+export type DashboardFilterCreateNestedManyWithoutQueryInput = {
+  create?: Prisma.XOR<Prisma.DashboardFilterCreateWithoutQueryInput, Prisma.DashboardFilterUncheckedCreateWithoutQueryInput> | Prisma.DashboardFilterCreateWithoutQueryInput[] | Prisma.DashboardFilterUncheckedCreateWithoutQueryInput[]
+  connectOrCreate?: Prisma.DashboardFilterCreateOrConnectWithoutQueryInput | Prisma.DashboardFilterCreateOrConnectWithoutQueryInput[]
+  createMany?: Prisma.DashboardFilterCreateManyQueryInputEnvelope
+  connect?: Prisma.DashboardFilterWhereUniqueInput | Prisma.DashboardFilterWhereUniqueInput[]
+}
+
+export type DashboardFilterUncheckedCreateNestedManyWithoutQueryInput = {
+  create?: Prisma.XOR<Prisma.DashboardFilterCreateWithoutQueryInput, Prisma.DashboardFilterUncheckedCreateWithoutQueryInput> | Prisma.DashboardFilterCreateWithoutQueryInput[] | Prisma.DashboardFilterUncheckedCreateWithoutQueryInput[]
+  connectOrCreate?: Prisma.DashboardFilterCreateOrConnectWithoutQueryInput | Prisma.DashboardFilterCreateOrConnectWithoutQueryInput[]
+  createMany?: Prisma.DashboardFilterCreateManyQueryInputEnvelope
+  connect?: Prisma.DashboardFilterWhereUniqueInput | Prisma.DashboardFilterWhereUniqueInput[]
+}
+
+export type DashboardFilterUpdateManyWithoutQueryNestedInput = {
+  create?: Prisma.XOR<Prisma.DashboardFilterCreateWithoutQueryInput, Prisma.DashboardFilterUncheckedCreateWithoutQueryInput> | Prisma.DashboardFilterCreateWithoutQueryInput[] | Prisma.DashboardFilterUncheckedCreateWithoutQueryInput[]
+  connectOrCreate?: Prisma.DashboardFilterCreateOrConnectWithoutQueryInput | Prisma.DashboardFilterCreateOrConnectWithoutQueryInput[]
+  upsert?: Prisma.DashboardFilterUpsertWithWhereUniqueWithoutQueryInput | Prisma.DashboardFilterUpsertWithWhereUniqueWithoutQueryInput[]
+  createMany?: Prisma.DashboardFilterCreateManyQueryInputEnvelope
+  set?: Prisma.DashboardFilterWhereUniqueInput | Prisma.DashboardFilterWhereUniqueInput[]
+  disconnect?: Prisma.DashboardFilterWhereUniqueInput | Prisma.DashboardFilterWhereUniqueInput[]
+  delete?: Prisma.DashboardFilterWhereUniqueInput | Prisma.DashboardFilterWhereUniqueInput[]
+  connect?: Prisma.DashboardFilterWhereUniqueInput | Prisma.DashboardFilterWhereUniqueInput[]
+  update?: Prisma.DashboardFilterUpdateWithWhereUniqueWithoutQueryInput | Prisma.DashboardFilterUpdateWithWhereUniqueWithoutQueryInput[]
+  updateMany?: Prisma.DashboardFilterUpdateManyWithWhereWithoutQueryInput | Prisma.DashboardFilterUpdateManyWithWhereWithoutQueryInput[]
+  deleteMany?: Prisma.DashboardFilterScalarWhereInput | Prisma.DashboardFilterScalarWhereInput[]
+}
+
+export type DashboardFilterUncheckedUpdateManyWithoutQueryNestedInput = {
+  create?: Prisma.XOR<Prisma.DashboardFilterCreateWithoutQueryInput, Prisma.DashboardFilterUncheckedCreateWithoutQueryInput> | Prisma.DashboardFilterCreateWithoutQueryInput[] | Prisma.DashboardFilterUncheckedCreateWithoutQueryInput[]
+  connectOrCreate?: Prisma.DashboardFilterCreateOrConnectWithoutQueryInput | Prisma.DashboardFilterCreateOrConnectWithoutQueryInput[]
+  upsert?: Prisma.DashboardFilterUpsertWithWhereUniqueWithoutQueryInput | Prisma.DashboardFilterUpsertWithWhereUniqueWithoutQueryInput[]
+  createMany?: Prisma.DashboardFilterCreateManyQueryInputEnvelope
+  set?: Prisma.DashboardFilterWhereUniqueInput | Prisma.DashboardFilterWhereUniqueInput[]
+  disconnect?: Prisma.DashboardFilterWhereUniqueInput | Prisma.DashboardFilterWhereUniqueInput[]
+  delete?: Prisma.DashboardFilterWhereUniqueInput | Prisma.DashboardFilterWhereUniqueInput[]
+  connect?: Prisma.DashboardFilterWhereUniqueInput | Prisma.DashboardFilterWhereUniqueInput[]
+  update?: Prisma.DashboardFilterUpdateWithWhereUniqueWithoutQueryInput | Prisma.DashboardFilterUpdateWithWhereUniqueWithoutQueryInput[]
+  updateMany?: Prisma.DashboardFilterUpdateManyWithWhereWithoutQueryInput | Prisma.DashboardFilterUpdateManyWithWhereWithoutQueryInput[]
   deleteMany?: Prisma.DashboardFilterScalarWhereInput | Prisma.DashboardFilterScalarWhereInput[]
 }
 
@@ -612,11 +766,14 @@ export type DashboardFilterCreateWithoutDataSourceInput = {
   field: string
   collection: string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  order?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   dashboard: Prisma.DashboardCreateNestedOneWithoutDashboardFiltersInput
   parent?: Prisma.DashboardFilterCreateNestedOneWithoutChildrenInput
   children?: Prisma.DashboardFilterCreateNestedManyWithoutParentInput
+  query?: Prisma.QueryCreateNestedOneWithoutDashboardFiltersInput
 }
 
 export type DashboardFilterUncheckedCreateWithoutDataSourceInput = {
@@ -628,6 +785,9 @@ export type DashboardFilterUncheckedCreateWithoutDataSourceInput = {
   collection: string
   parentFilterId?: string | null
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  queryId?: string | null
+  order?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   children?: Prisma.DashboardFilterUncheckedCreateNestedManyWithoutParentInput
@@ -672,8 +832,71 @@ export type DashboardFilterScalarWhereInput = {
   dataSourceId?: Prisma.StringFilter<"DashboardFilter"> | string
   parentFilterId?: Prisma.StringNullableFilter<"DashboardFilter"> | string | null
   targetMappings?: Prisma.JsonFilter<"DashboardFilter">
+  valueField?: Prisma.StringNullableFilter<"DashboardFilter"> | string | null
+  queryId?: Prisma.StringNullableFilter<"DashboardFilter"> | string | null
+  order?: Prisma.IntFilter<"DashboardFilter"> | number
   createdAt?: Prisma.DateTimeFilter<"DashboardFilter"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"DashboardFilter"> | Date | string
+}
+
+export type DashboardFilterCreateWithoutQueryInput = {
+  id?: string
+  label: string
+  type?: $Enums.FilterType
+  field: string
+  collection: string
+  targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  order?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  dashboard: Prisma.DashboardCreateNestedOneWithoutDashboardFiltersInput
+  dataSource: Prisma.DataSourceCreateNestedOneWithoutDashboardFiltersInput
+  parent?: Prisma.DashboardFilterCreateNestedOneWithoutChildrenInput
+  children?: Prisma.DashboardFilterCreateNestedManyWithoutParentInput
+}
+
+export type DashboardFilterUncheckedCreateWithoutQueryInput = {
+  id?: string
+  dashboardId: string
+  label: string
+  type?: $Enums.FilterType
+  field: string
+  collection: string
+  dataSourceId: string
+  parentFilterId?: string | null
+  targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  order?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  children?: Prisma.DashboardFilterUncheckedCreateNestedManyWithoutParentInput
+}
+
+export type DashboardFilterCreateOrConnectWithoutQueryInput = {
+  where: Prisma.DashboardFilterWhereUniqueInput
+  create: Prisma.XOR<Prisma.DashboardFilterCreateWithoutQueryInput, Prisma.DashboardFilterUncheckedCreateWithoutQueryInput>
+}
+
+export type DashboardFilterCreateManyQueryInputEnvelope = {
+  data: Prisma.DashboardFilterCreateManyQueryInput | Prisma.DashboardFilterCreateManyQueryInput[]
+  skipDuplicates?: boolean
+}
+
+export type DashboardFilterUpsertWithWhereUniqueWithoutQueryInput = {
+  where: Prisma.DashboardFilterWhereUniqueInput
+  update: Prisma.XOR<Prisma.DashboardFilterUpdateWithoutQueryInput, Prisma.DashboardFilterUncheckedUpdateWithoutQueryInput>
+  create: Prisma.XOR<Prisma.DashboardFilterCreateWithoutQueryInput, Prisma.DashboardFilterUncheckedCreateWithoutQueryInput>
+}
+
+export type DashboardFilterUpdateWithWhereUniqueWithoutQueryInput = {
+  where: Prisma.DashboardFilterWhereUniqueInput
+  data: Prisma.XOR<Prisma.DashboardFilterUpdateWithoutQueryInput, Prisma.DashboardFilterUncheckedUpdateWithoutQueryInput>
+}
+
+export type DashboardFilterUpdateManyWithWhereWithoutQueryInput = {
+  where: Prisma.DashboardFilterScalarWhereInput
+  data: Prisma.XOR<Prisma.DashboardFilterUpdateManyMutationInput, Prisma.DashboardFilterUncheckedUpdateManyWithoutQueryInput>
 }
 
 export type DashboardFilterCreateWithoutDashboardInput = {
@@ -683,11 +906,14 @@ export type DashboardFilterCreateWithoutDashboardInput = {
   field: string
   collection: string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  order?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   dataSource: Prisma.DataSourceCreateNestedOneWithoutDashboardFiltersInput
   parent?: Prisma.DashboardFilterCreateNestedOneWithoutChildrenInput
   children?: Prisma.DashboardFilterCreateNestedManyWithoutParentInput
+  query?: Prisma.QueryCreateNestedOneWithoutDashboardFiltersInput
 }
 
 export type DashboardFilterUncheckedCreateWithoutDashboardInput = {
@@ -699,6 +925,9 @@ export type DashboardFilterUncheckedCreateWithoutDashboardInput = {
   dataSourceId: string
   parentFilterId?: string | null
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  queryId?: string | null
+  order?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   children?: Prisma.DashboardFilterUncheckedCreateNestedManyWithoutParentInput
@@ -737,11 +966,14 @@ export type DashboardFilterCreateWithoutChildrenInput = {
   field: string
   collection: string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  order?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   dashboard: Prisma.DashboardCreateNestedOneWithoutDashboardFiltersInput
   dataSource: Prisma.DataSourceCreateNestedOneWithoutDashboardFiltersInput
   parent?: Prisma.DashboardFilterCreateNestedOneWithoutChildrenInput
+  query?: Prisma.QueryCreateNestedOneWithoutDashboardFiltersInput
 }
 
 export type DashboardFilterUncheckedCreateWithoutChildrenInput = {
@@ -754,6 +986,9 @@ export type DashboardFilterUncheckedCreateWithoutChildrenInput = {
   dataSourceId: string
   parentFilterId?: string | null
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  queryId?: string | null
+  order?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -770,11 +1005,14 @@ export type DashboardFilterCreateWithoutParentInput = {
   field: string
   collection: string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  order?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   dashboard: Prisma.DashboardCreateNestedOneWithoutDashboardFiltersInput
   dataSource: Prisma.DataSourceCreateNestedOneWithoutDashboardFiltersInput
   children?: Prisma.DashboardFilterCreateNestedManyWithoutParentInput
+  query?: Prisma.QueryCreateNestedOneWithoutDashboardFiltersInput
 }
 
 export type DashboardFilterUncheckedCreateWithoutParentInput = {
@@ -786,6 +1024,9 @@ export type DashboardFilterUncheckedCreateWithoutParentInput = {
   collection: string
   dataSourceId: string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  queryId?: string | null
+  order?: number
   createdAt?: Date | string
   updatedAt?: Date | string
   children?: Prisma.DashboardFilterUncheckedCreateNestedManyWithoutParentInput
@@ -819,11 +1060,14 @@ export type DashboardFilterUpdateWithoutChildrenInput = {
   field?: Prisma.StringFieldUpdateOperationsInput | string
   collection?: Prisma.StringFieldUpdateOperationsInput | string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dashboard?: Prisma.DashboardUpdateOneRequiredWithoutDashboardFiltersNestedInput
   dataSource?: Prisma.DataSourceUpdateOneRequiredWithoutDashboardFiltersNestedInput
   parent?: Prisma.DashboardFilterUpdateOneWithoutChildrenNestedInput
+  query?: Prisma.QueryUpdateOneWithoutDashboardFiltersNestedInput
 }
 
 export type DashboardFilterUncheckedUpdateWithoutChildrenInput = {
@@ -836,6 +1080,9 @@ export type DashboardFilterUncheckedUpdateWithoutChildrenInput = {
   dataSourceId?: Prisma.StringFieldUpdateOperationsInput | string
   parentFilterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  queryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -865,6 +1112,9 @@ export type DashboardFilterCreateManyDataSourceInput = {
   collection: string
   parentFilterId?: string | null
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  queryId?: string | null
+  order?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -876,11 +1126,14 @@ export type DashboardFilterUpdateWithoutDataSourceInput = {
   field?: Prisma.StringFieldUpdateOperationsInput | string
   collection?: Prisma.StringFieldUpdateOperationsInput | string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dashboard?: Prisma.DashboardUpdateOneRequiredWithoutDashboardFiltersNestedInput
   parent?: Prisma.DashboardFilterUpdateOneWithoutChildrenNestedInput
   children?: Prisma.DashboardFilterUpdateManyWithoutParentNestedInput
+  query?: Prisma.QueryUpdateOneWithoutDashboardFiltersNestedInput
 }
 
 export type DashboardFilterUncheckedUpdateWithoutDataSourceInput = {
@@ -892,6 +1145,9 @@ export type DashboardFilterUncheckedUpdateWithoutDataSourceInput = {
   collection?: Prisma.StringFieldUpdateOperationsInput | string
   parentFilterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  queryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   children?: Prisma.DashboardFilterUncheckedUpdateManyWithoutParentNestedInput
@@ -906,6 +1162,75 @@ export type DashboardFilterUncheckedUpdateManyWithoutDataSourceInput = {
   collection?: Prisma.StringFieldUpdateOperationsInput | string
   parentFilterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  queryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type DashboardFilterCreateManyQueryInput = {
+  id?: string
+  dashboardId: string
+  label: string
+  type?: $Enums.FilterType
+  field: string
+  collection: string
+  dataSourceId: string
+  parentFilterId?: string | null
+  targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  order?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type DashboardFilterUpdateWithoutQueryInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumFilterTypeFieldUpdateOperationsInput | $Enums.FilterType
+  field?: Prisma.StringFieldUpdateOperationsInput | string
+  collection?: Prisma.StringFieldUpdateOperationsInput | string
+  targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dashboard?: Prisma.DashboardUpdateOneRequiredWithoutDashboardFiltersNestedInput
+  dataSource?: Prisma.DataSourceUpdateOneRequiredWithoutDashboardFiltersNestedInput
+  parent?: Prisma.DashboardFilterUpdateOneWithoutChildrenNestedInput
+  children?: Prisma.DashboardFilterUpdateManyWithoutParentNestedInput
+}
+
+export type DashboardFilterUncheckedUpdateWithoutQueryInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  dashboardId?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumFilterTypeFieldUpdateOperationsInput | $Enums.FilterType
+  field?: Prisma.StringFieldUpdateOperationsInput | string
+  collection?: Prisma.StringFieldUpdateOperationsInput | string
+  dataSourceId?: Prisma.StringFieldUpdateOperationsInput | string
+  parentFilterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  children?: Prisma.DashboardFilterUncheckedUpdateManyWithoutParentNestedInput
+}
+
+export type DashboardFilterUncheckedUpdateManyWithoutQueryInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  dashboardId?: Prisma.StringFieldUpdateOperationsInput | string
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumFilterTypeFieldUpdateOperationsInput | $Enums.FilterType
+  field?: Prisma.StringFieldUpdateOperationsInput | string
+  collection?: Prisma.StringFieldUpdateOperationsInput | string
+  dataSourceId?: Prisma.StringFieldUpdateOperationsInput | string
+  parentFilterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -919,6 +1244,9 @@ export type DashboardFilterCreateManyDashboardInput = {
   dataSourceId: string
   parentFilterId?: string | null
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  queryId?: string | null
+  order?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -930,11 +1258,14 @@ export type DashboardFilterUpdateWithoutDashboardInput = {
   field?: Prisma.StringFieldUpdateOperationsInput | string
   collection?: Prisma.StringFieldUpdateOperationsInput | string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dataSource?: Prisma.DataSourceUpdateOneRequiredWithoutDashboardFiltersNestedInput
   parent?: Prisma.DashboardFilterUpdateOneWithoutChildrenNestedInput
   children?: Prisma.DashboardFilterUpdateManyWithoutParentNestedInput
+  query?: Prisma.QueryUpdateOneWithoutDashboardFiltersNestedInput
 }
 
 export type DashboardFilterUncheckedUpdateWithoutDashboardInput = {
@@ -946,6 +1277,9 @@ export type DashboardFilterUncheckedUpdateWithoutDashboardInput = {
   dataSourceId?: Prisma.StringFieldUpdateOperationsInput | string
   parentFilterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  queryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   children?: Prisma.DashboardFilterUncheckedUpdateManyWithoutParentNestedInput
@@ -960,6 +1294,9 @@ export type DashboardFilterUncheckedUpdateManyWithoutDashboardInput = {
   dataSourceId?: Prisma.StringFieldUpdateOperationsInput | string
   parentFilterId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  queryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -973,6 +1310,9 @@ export type DashboardFilterCreateManyParentInput = {
   collection: string
   dataSourceId: string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: string | null
+  queryId?: string | null
+  order?: number
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -984,11 +1324,14 @@ export type DashboardFilterUpdateWithoutParentInput = {
   field?: Prisma.StringFieldUpdateOperationsInput | string
   collection?: Prisma.StringFieldUpdateOperationsInput | string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dashboard?: Prisma.DashboardUpdateOneRequiredWithoutDashboardFiltersNestedInput
   dataSource?: Prisma.DataSourceUpdateOneRequiredWithoutDashboardFiltersNestedInput
   children?: Prisma.DashboardFilterUpdateManyWithoutParentNestedInput
+  query?: Prisma.QueryUpdateOneWithoutDashboardFiltersNestedInput
 }
 
 export type DashboardFilterUncheckedUpdateWithoutParentInput = {
@@ -1000,6 +1343,9 @@ export type DashboardFilterUncheckedUpdateWithoutParentInput = {
   collection?: Prisma.StringFieldUpdateOperationsInput | string
   dataSourceId?: Prisma.StringFieldUpdateOperationsInput | string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  queryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   children?: Prisma.DashboardFilterUncheckedUpdateManyWithoutParentNestedInput
@@ -1014,6 +1360,9 @@ export type DashboardFilterUncheckedUpdateManyWithoutParentInput = {
   collection?: Prisma.StringFieldUpdateOperationsInput | string
   dataSourceId?: Prisma.StringFieldUpdateOperationsInput | string
   targetMappings?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  valueField?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  queryId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  order?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1059,12 +1408,16 @@ export type DashboardFilterSelect<ExtArgs extends runtime.Types.Extensions.Inter
   dataSourceId?: boolean
   parentFilterId?: boolean
   targetMappings?: boolean
+  valueField?: boolean
+  queryId?: boolean
+  order?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   dashboard?: boolean | Prisma.DashboardDefaultArgs<ExtArgs>
   dataSource?: boolean | Prisma.DataSourceDefaultArgs<ExtArgs>
   parent?: boolean | Prisma.DashboardFilter$parentArgs<ExtArgs>
   children?: boolean | Prisma.DashboardFilter$childrenArgs<ExtArgs>
+  query?: boolean | Prisma.DashboardFilter$queryArgs<ExtArgs>
   _count?: boolean | Prisma.DashboardFilterCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["dashboardFilter"]>
 
@@ -1078,11 +1431,15 @@ export type DashboardFilterSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   dataSourceId?: boolean
   parentFilterId?: boolean
   targetMappings?: boolean
+  valueField?: boolean
+  queryId?: boolean
+  order?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   dashboard?: boolean | Prisma.DashboardDefaultArgs<ExtArgs>
   dataSource?: boolean | Prisma.DataSourceDefaultArgs<ExtArgs>
   parent?: boolean | Prisma.DashboardFilter$parentArgs<ExtArgs>
+  query?: boolean | Prisma.DashboardFilter$queryArgs<ExtArgs>
 }, ExtArgs["result"]["dashboardFilter"]>
 
 export type DashboardFilterSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1095,11 +1452,15 @@ export type DashboardFilterSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   dataSourceId?: boolean
   parentFilterId?: boolean
   targetMappings?: boolean
+  valueField?: boolean
+  queryId?: boolean
+  order?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   dashboard?: boolean | Prisma.DashboardDefaultArgs<ExtArgs>
   dataSource?: boolean | Prisma.DataSourceDefaultArgs<ExtArgs>
   parent?: boolean | Prisma.DashboardFilter$parentArgs<ExtArgs>
+  query?: boolean | Prisma.DashboardFilter$queryArgs<ExtArgs>
 }, ExtArgs["result"]["dashboardFilter"]>
 
 export type DashboardFilterSelectScalar = {
@@ -1112,27 +1473,33 @@ export type DashboardFilterSelectScalar = {
   dataSourceId?: boolean
   parentFilterId?: boolean
   targetMappings?: boolean
+  valueField?: boolean
+  queryId?: boolean
+  order?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type DashboardFilterOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "dashboardId" | "label" | "type" | "field" | "collection" | "dataSourceId" | "parentFilterId" | "targetMappings" | "createdAt" | "updatedAt", ExtArgs["result"]["dashboardFilter"]>
+export type DashboardFilterOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "dashboardId" | "label" | "type" | "field" | "collection" | "dataSourceId" | "parentFilterId" | "targetMappings" | "valueField" | "queryId" | "order" | "createdAt" | "updatedAt", ExtArgs["result"]["dashboardFilter"]>
 export type DashboardFilterInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   dashboard?: boolean | Prisma.DashboardDefaultArgs<ExtArgs>
   dataSource?: boolean | Prisma.DataSourceDefaultArgs<ExtArgs>
   parent?: boolean | Prisma.DashboardFilter$parentArgs<ExtArgs>
   children?: boolean | Prisma.DashboardFilter$childrenArgs<ExtArgs>
+  query?: boolean | Prisma.DashboardFilter$queryArgs<ExtArgs>
   _count?: boolean | Prisma.DashboardFilterCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DashboardFilterIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   dashboard?: boolean | Prisma.DashboardDefaultArgs<ExtArgs>
   dataSource?: boolean | Prisma.DataSourceDefaultArgs<ExtArgs>
   parent?: boolean | Prisma.DashboardFilter$parentArgs<ExtArgs>
+  query?: boolean | Prisma.DashboardFilter$queryArgs<ExtArgs>
 }
 export type DashboardFilterIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   dashboard?: boolean | Prisma.DashboardDefaultArgs<ExtArgs>
   dataSource?: boolean | Prisma.DataSourceDefaultArgs<ExtArgs>
   parent?: boolean | Prisma.DashboardFilter$parentArgs<ExtArgs>
+  query?: boolean | Prisma.DashboardFilter$queryArgs<ExtArgs>
 }
 
 export type $DashboardFilterPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1142,6 +1509,7 @@ export type $DashboardFilterPayload<ExtArgs extends runtime.Types.Extensions.Int
     dataSource: Prisma.$DataSourcePayload<ExtArgs>
     parent: Prisma.$DashboardFilterPayload<ExtArgs> | null
     children: Prisma.$DashboardFilterPayload<ExtArgs>[]
+    query: Prisma.$QueryPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1153,6 +1521,9 @@ export type $DashboardFilterPayload<ExtArgs extends runtime.Types.Extensions.Int
     dataSourceId: string
     parentFilterId: string | null
     targetMappings: runtime.JsonValue
+    valueField: string | null
+    queryId: string | null
+    order: number
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["dashboardFilter"]>
@@ -1553,6 +1924,7 @@ export interface Prisma__DashboardFilterClient<T, Null = never, ExtArgs extends 
   dataSource<T extends Prisma.DataSourceDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DataSourceDefaultArgs<ExtArgs>>): Prisma.Prisma__DataSourceClient<runtime.Types.Result.GetResult<Prisma.$DataSourcePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   parent<T extends Prisma.DashboardFilter$parentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DashboardFilter$parentArgs<ExtArgs>>): Prisma.Prisma__DashboardFilterClient<runtime.Types.Result.GetResult<Prisma.$DashboardFilterPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   children<T extends Prisma.DashboardFilter$childrenArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DashboardFilter$childrenArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DashboardFilterPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  query<T extends Prisma.DashboardFilter$queryArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.DashboardFilter$queryArgs<ExtArgs>>): Prisma.Prisma__QueryClient<runtime.Types.Result.GetResult<Prisma.$QueryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1591,6 +1963,9 @@ export interface DashboardFilterFieldRefs {
   readonly dataSourceId: Prisma.FieldRef<"DashboardFilter", 'String'>
   readonly parentFilterId: Prisma.FieldRef<"DashboardFilter", 'String'>
   readonly targetMappings: Prisma.FieldRef<"DashboardFilter", 'Json'>
+  readonly valueField: Prisma.FieldRef<"DashboardFilter", 'String'>
+  readonly queryId: Prisma.FieldRef<"DashboardFilter", 'String'>
+  readonly order: Prisma.FieldRef<"DashboardFilter", 'Int'>
   readonly createdAt: Prisma.FieldRef<"DashboardFilter", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"DashboardFilter", 'DateTime'>
 }
@@ -2034,6 +2409,25 @@ export type DashboardFilter$childrenArgs<ExtArgs extends runtime.Types.Extension
   take?: number
   skip?: number
   distinct?: Prisma.DashboardFilterScalarFieldEnum | Prisma.DashboardFilterScalarFieldEnum[]
+}
+
+/**
+ * DashboardFilter.query
+ */
+export type DashboardFilter$queryArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Query
+   */
+  select?: Prisma.QuerySelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Query
+   */
+  omit?: Prisma.QueryOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QueryInclude<ExtArgs> | null
+  where?: Prisma.QueryWhereInput
 }
 
 /**

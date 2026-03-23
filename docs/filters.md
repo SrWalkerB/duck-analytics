@@ -19,11 +19,12 @@ id              String      PK
 dashboardId     String      FK → Dashboard
 label           String      Nome exibido no filtro (ex: "Marca", "Categoria")
 type            FilterType  SELECT | MULTI_SELECT | DATE_RANGE | TEXT
-field           String      Campo MongoDB fonte dos valores (ex: "name", "brand")
+field           String      Campo fonte dos valores (ex: "name", "brand")
 collection      String      Collection MongoDB de onde puxa os valores
 dataSourceId    String      FK → DataSource
 parentFilterId  String?     FK → DashboardFilter (para cascata)
 targetMappings  Json        Array de { componentId, targetField }
+queryId         String?     FK → Query (para filtros baseados em query customizada)
 ```
 
 ### targetMappings
@@ -58,13 +59,17 @@ Todos sob `v1/dashboards/:dashboardId/filters`, autenticados com JWT.
 
 ### GET /:filterId/values
 
-Retorna valores distintos do campo configurado via aggregation MongoDB.
+Retorna valores do campo configurado. Dois modos de operacao:
+
+**Modo Simples** (sem queryId): aggregation `$group` direto na collection MongoDB.
+
+**Modo Query** (com queryId): executa a query salva via `QueriesService.execute()`, extrai valores da coluna `field`, deduplica e ordena.
 
 **Query params:**
 - `page` (default 1)
 - `pageSize` (default 20)
 - `search` — filtro regex case-insensitive nos valores
-- `parentValue` — valor(es) do filtro pai, separados por virgula para multi-select. Usa `$in` quando multiplos.
+- `parentValue` — valor(es) do filtro pai, separados por virgula para multi-select. Usa `$in` quando multiplos. (apenas modo simples)
 
 **Resposta:**
 ```json
@@ -118,7 +123,12 @@ Renderiza acima do grid quando o dashboard tem filtros. Cada filtro vira um drop
 
 Arquivo: `src/components/dashboard/FilterEditorPanel.tsx`
 
-Sheet lateral para criar/editar filtros. Fluxo: DataSource → Collection → Campo → Tipo → Pai (opcional) → Componentes alvo com mapeamento de campo.
+Sheet lateral para criar/editar filtros. Possui dois modos de fonte de valores:
+
+- **Simples:** DataSource → Collection → Campo (distinct aggregation direto na collection)
+- **Query customizada:** selecionar uma query salva existente → escolher a coluna de valores (executa a query e usa o resultado)
+
+Alem disso: Tipo → Pai (opcional) → Componentes alvo com mapeamento de campo.
 
 ### Integracao na pagina
 
@@ -167,7 +177,7 @@ Resultado volta → Grid re-renderiza com dados filtrados
 ## Evolucoes Futuras
 
 - Deteccao automatica de relacionamentos entre collections (via $lookup metadata)
-- Filtros derivados de componentes de tabela (usar resultado de uma query como fonte de valores)
+- ~~Filtros derivados de componentes de tabela~~ ✓ Implementado via queryId (query customizada como fonte de valores)
 - UI de date picker para DATE_RANGE
 - Reordenacao de filtros via drag-and-drop
 - Refetch parcial (so componentes afetados pelo filtro que mudou)

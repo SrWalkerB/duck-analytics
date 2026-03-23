@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Pencil, Plus, SlidersHorizontal } from 'lucide-react'
+import { GripVertical, Pencil, Plus, SlidersHorizontal } from 'lucide-react'
 import { api } from '@/services/api'
 import type { Dashboard, DashboardComponent, DashboardFilter, Component, DashboardTab } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -12,6 +12,23 @@ import { FilterBar } from '@/components/dashboard/FilterBar'
 import { FilterEditorPanel } from '@/components/dashboard/FilterEditorPanel'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  horizontalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 export const Route = createFileRoute('/_authenticated/dashboards/$id/')({
   component: DashboardPage,
@@ -371,23 +388,15 @@ function DashboardPage() {
         )}
 
         {isEditMode && dashboard.dashboardFilters.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-            {dashboard.dashboardFilters.map((f) => (
-              <Badge
-                key={f.id}
-                variant="outline"
-                className="cursor-pointer gap-1 px-2 py-1 text-xs hover:bg-accent"
-                onClick={() => {
-                  setEditingFilter(f)
-                  setFilterPanelOpen(true)
-                }}
-              >
-                <Pencil className="h-3 w-3" />
-                {f.label}
-              </Badge>
-            ))}
-          </div>
+          <EditModeFilterBar
+            filters={dashboard.dashboardFilters}
+            dashboardId={id}
+            onEditFilter={(f) => {
+              setEditingFilter(f)
+              setFilterPanelOpen(true)
+            }}
+            onReorder={() => qc.invalidateQueries({ queryKey: ['dashboard', id] })}
+          />
         )}
 
         <DashboardGrid
@@ -432,5 +441,94 @@ function DashboardPage() {
         </>
       )}
     </div>
+  )
+}
+
+// ── Drag-and-drop filter bar (edit mode) ──
+
+function EditModeFilterBar({
+  filters,
+  dashboardId,
+  onEditFilter,
+  onReorder,
+}: {
+  filters: DashboardFilter[]
+  dashboardId: string
+  onEditFilter: (f: DashboardFilter) => void
+  onReorder: () => void
+}) {
+  const [items, setItems] = useState(filters)
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  // Sync with external filters prop
+  if (filters.length !== items.length || filters.some((f, i) => f.id !== items[i]?.id)) {
+    setItems(filters)
+  }
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const oldIndex = items.findIndex((f) => f.id === active.id)
+    const newIndex = items.findIndex((f) => f.id === over.id)
+    const reordered = arrayMove(items, oldIndex, newIndex)
+    setItems(reordered)
+
+    try {
+      await api.put(`/v1/dashboards/${dashboardId}/filters/reorder`, {
+        filterIds: reordered.map((f) => f.id),
+      })
+      onReorder()
+    } catch {
+      setItems(items) // rollback
+      toast.error('Erro ao reordenar filtros')
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={items.map((f) => f.id)} strategy={horizontalListSortingStrategy}>
+          {items.map((f) => (
+            <SortableFilterBadge key={f.id} filter={f} onEdit={() => onEditFilter(f)} />
+          ))}
+        </SortableContext>
+      </DndContext>
+    </div>
+  )
+}
+
+function SortableFilterBadge({
+  filter,
+  onEdit,
+}: {
+  filter: DashboardFilter
+  onEdit: () => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: filter.id,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <Badge
+      ref={setNodeRef}
+      style={style}
+      variant="outline"
+      className="cursor-pointer gap-1 px-2 py-1 text-xs hover:bg-accent"
+    >
+      <GripVertical className="h-3 w-3 cursor-grab text-muted-foreground" {...attributes} {...listeners} />
+      <span onClick={onEdit}>{filter.label}</span>
+      <Pencil className="h-3 w-3 cursor-pointer" onClick={onEdit} />
+    </Badge>
   )
 }

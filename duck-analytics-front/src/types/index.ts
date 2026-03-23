@@ -209,6 +209,8 @@ export interface DashboardFilter {
   dataSourceId: string
   parentFilterId: string | null
   targetMappings: FilterTargetMapping[]
+  valueField: string | null
+  queryId: string | null
 }
 
 export interface Dashboard {

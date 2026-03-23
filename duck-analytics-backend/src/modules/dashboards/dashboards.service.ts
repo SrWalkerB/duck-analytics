@@ -46,7 +46,7 @@ export class DashboardsService {
             },
           },
         },
-        dashboardFilters: true,
+        dashboardFilters: { orderBy: [{ order: 'asc' }, { createdAt: 'asc' }] },
       },
     });
     if (!d) throw new NotFoundException('Dashboard not found');
@@ -156,7 +156,7 @@ export class DashboardsService {
         for (const filter of filters) {
           const selected = activeFilters[filter.id];
           if (!selected || selected.length === 0) continue;
-          const mappings = (filter.targetMappings as TargetMapping[]) ?? [];
+          const mappings = (filter.targetMappings as unknown as TargetMapping[]) ?? [];
           const mapping = mappings.find(
             (m) => m.componentId === dc.componentId,
           );
