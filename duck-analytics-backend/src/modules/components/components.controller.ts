@@ -53,6 +53,24 @@ export class ComponentsController {
     return this.service.duplicate(id, userId);
   }
 
+  @Get(':id/output-fields')
+  async getOutputFields(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+  ) {
+    const fields = await this.service.getOutputFields(id, userId);
+    return { fields };
+  }
+
+  @Get(':id/matchable-fields')
+  async getMatchableFields(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+  ) {
+    const fields = await this.service.getMatchableFields(id, userId);
+    return { fields };
+  }
+
   @Get(':id/data')
   getData(@Param('id') id: string, @CurrentUser() userId: string) {
     return this.service.getData(id, userId);

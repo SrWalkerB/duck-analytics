@@ -148,17 +148,22 @@ export function ChartRenderer({ type, data, configuration }: Props) {
     const innerRadius = display.innerRadius ?? 0
     const labelType = display.labelType ?? 'percentage'
 
-    const renderLabel = ({ cx = 0, cy = 0, midAngle = 0, outerRadius = 0, percent = 0, value, name }: PieLabelProps) => {
-      if (labelType === 'none' || percent < 0.01) return null
+    const renderLabel = ({ cx = 0, cy = 0, midAngle = 0, outerRadius = 0, percent = 0, value, name, index }: PieLabelProps & { index?: number }) => {
+      if (labelType === 'none' || percent < 0.005) return null
       const RADIAN = Math.PI / 180
       const angle = -midAngle * RADIAN
 
+      // Alternate line length for small slices so adjacent labels don't overlap
+      const isSmall = percent < 0.05
+      const offset = isSmall && typeof index === 'number' && index % 2 === 1 ? 30 : 0
+      const lineLen = 58 + offset
+
       const lineStartX = cx + (outerRadius + 4) * Math.cos(angle)
       const lineStartY = cy + (outerRadius + 4) * Math.sin(angle)
-      const lineEndX = cx + (outerRadius + 58) * Math.cos(angle)
-      const lineEndY = cy + (outerRadius + 58) * Math.sin(angle)
-      const labelX = cx + (outerRadius + 66) * Math.cos(angle)
-      const labelY = cy + (outerRadius + 66) * Math.sin(angle)
+      const lineEndX = cx + (outerRadius + lineLen) * Math.cos(angle)
+      const lineEndY = cy + (outerRadius + lineLen) * Math.sin(angle)
+      const labelX = cx + (outerRadius + lineLen + 8) * Math.cos(angle)
+      const labelY = cy + (outerRadius + lineLen + 8) * Math.sin(angle)
 
       let text = ''
       if (labelType === 'percentage') text = `${(percent * 100).toFixed(0)}%`

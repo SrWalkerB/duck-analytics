@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -51,6 +51,17 @@ export function LookupStageEditor({
       api.get(`/v1/data-sources/${dataSourceId}/collections/${stage.from}/schema`).then((r) => r.data),
     enabled: !!dataSourceId && !!stage.from,
   })
+
+  // Store foreign fields on the stage so downstream stages can derive available fields
+  const onUpdateRef = useRef(onUpdate)
+  useEffect(() => {
+    onUpdateRef.current = onUpdate
+  }, [onUpdate])
+  useEffect(() => {
+    if (foreignSchema?.fields) {
+      onUpdateRef.current({ _foreignFields: foreignSchema.fields } as Partial<LookupStage>)
+    }
+  }, [foreignSchema?.fields])
 
   return (
     <div className="space-y-2">

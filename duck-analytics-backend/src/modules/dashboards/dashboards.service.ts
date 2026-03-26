@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/prisma/prisma.service';
 import { ComponentsService } from '../components/components.service';
+import { MongoDBService } from '../../lib/mongodb/mongodb.service';
+import { DataSourcesService } from '../data-sources/data-sources.service';
 import type { CreateDashboardDto } from './dto/create-dashboard.dto';
 import type { UpdateDashboardDto } from './dto/update-dashboard.dto';
 import type { AddDashboardComponentDto } from './dto/add-dashboard-component.dto';
@@ -10,6 +12,8 @@ import type { QueryFilter } from '../queries/query-builder.service';
 interface TargetMapping {
   componentId: string;
   targetField: string;
+  valueField?: string;
+  fieldType?: string;
 }
 
 @Injectable()
@@ -17,6 +21,8 @@ export class DashboardsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly components: ComponentsService,
+    private readonly mongodb: MongoDBService,
+    private readonly dataSources: DataSourcesService,
   ) {}
 
   async findAll(userId: string) {
@@ -140,6 +146,31 @@ export class DashboardsService {
     return { ok: true };
   }
 
+  /**
+   * Translate selected filter values (from filter.field) to the mapping's valueField
+   * by querying the source collection.
+   */
+  private async translateValues(
+    filter: { field: string; collection: string; dataSourceId: string },
+    mapping: TargetMapping,
+    selected: unknown[],
+    userId: string,
+  ): Promise<unknown[]> {
+    if (!mapping.valueField || mapping.valueField === filter.field) {
+      return selected;
+    }
+    const ds = await this.dataSources.findOne(filter.dataSourceId, userId);
+    const db = await this.mongodb.getDb(ds.connectionString, ds.database);
+    const results = await db
+      .collection(filter.collection)
+      .aggregate([
+        { $match: { [filter.field]: { $in: selected } } },
+        { $group: { _id: `$${mapping.valueField}` } },
+      ])
+      .toArray();
+    return results.map((r) => r._id).filter((v) => v != null);
+  }
+
   async getData(
     dashboardId: string,
     userId: string,
@@ -161,10 +192,20 @@ export class DashboardsService {
             (m) => m.componentId === dc.componentId,
           );
           if (!mapping) continue;
+
+          // Translate values if mapping has a different valueField
+          const values = await this.translateValues(
+            filter,
+            mapping,
+            selected,
+            userId,
+          );
+
           injected.push({
             field: mapping.targetField,
             operator: 'in',
-            value: selected,
+            value: values,
+            fieldType: mapping.fieldType,
           });
         }
 

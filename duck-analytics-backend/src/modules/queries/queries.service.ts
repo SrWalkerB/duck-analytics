@@ -2,10 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/prisma/prisma.service';
 import { DataSourcesService } from '../data-sources/data-sources.service';
 import { MongoDBService } from '../../lib/mongodb/mongodb.service';
+import { MongoDBIntrospectionService } from '../../lib/mongodb/mongodb-introspection.service';
 import { QueryBuilderService } from './query-builder.service';
-import type {
-  QueryFilter,
-  QueryConfigurationAny,
+import {
+  isPipelineConfiguration,
+  type QueryFilter,
+  type QueryConfigurationAny,
+  type FieldSchema,
+  type MatchableField,
 } from './query-builder.service';
 import type { CreateQueryDto } from './dto/create-query.dto';
 import type { UpdateQueryDto } from './dto/update-query.dto';
@@ -19,6 +23,7 @@ export class QueriesService {
     private readonly prisma: PrismaService,
     private readonly dataSources: DataSourcesService,
     private readonly mongodb: MongoDBService,
+    private readonly introspection: MongoDBIntrospectionService,
     private readonly builder: QueryBuilderService,
   ) {}
 
@@ -83,6 +88,78 @@ export class QueriesService {
       where: { id },
       data: { deletedAt: new Date() },
     });
+  }
+
+  /**
+   * Returns the output fields of a query by statically analyzing
+   * its pipeline configuration, considering $lookup and $group stages.
+   */
+  async getOutputFields(
+    queryId: string,
+    userId: string,
+  ): Promise<FieldSchema[]> {
+    const query = await this.findOne(queryId, userId);
+    const ds = await this.dataSources.findOne(query.dataSourceId, userId);
+    const db = await this.mongodb.getDb(ds.connectionString, ds.database);
+    const config = query.configuration as QueryConfigurationAny;
+
+    // Get base collection fields
+    const baseFields = await this.introspection.inferSchema(
+      db,
+      query.collection,
+    );
+
+    // Get foreign collection schemas for $lookup stages
+    const foreignSchemas = new Map<string, FieldSchema[]>();
+    const lookupCollections = this.extractLookupCollections(config);
+    await Promise.all(
+      lookupCollections.map(async (col) => {
+        const fields = await this.introspection.inferSchema(db, col);
+        foreignSchemas.set(col, fields);
+      }),
+    );
+
+    return this.builder.getOutputFields(config, baseFields, foreignSchemas);
+  }
+
+  async getMatchableFields(
+    queryId: string,
+    userId: string,
+  ): Promise<MatchableField[]> {
+    const query = await this.findOne(queryId, userId);
+    const ds = await this.dataSources.findOne(query.dataSourceId, userId);
+    const db = await this.mongodb.getDb(ds.connectionString, ds.database);
+    const config = query.configuration as QueryConfigurationAny;
+
+    const baseFields = await this.introspection.inferSchema(
+      db,
+      query.collection,
+    );
+
+    const foreignSchemas = new Map<string, FieldSchema[]>();
+    const lookupCollections = this.extractLookupCollections(config);
+    await Promise.all(
+      lookupCollections.map(async (col) => {
+        const fields = await this.introspection.inferSchema(db, col);
+        foreignSchemas.set(col, fields);
+      }),
+    );
+
+    return this.builder.getMatchableFields(config, baseFields, foreignSchemas);
+  }
+
+  private extractLookupCollections(
+    config: QueryConfigurationAny,
+  ): string[] {
+    if (isPipelineConfiguration(config)) {
+      return config.stages
+        .filter(
+          (s): s is Extract<typeof s, { type: '$lookup' }> =>
+            s.type === '$lookup' && s.enabled,
+        )
+        .map((s) => s.from);
+    }
+    return (config.lookups ?? []).map((l) => l.from);
   }
 
   async execute(id: string, userId: string, injectedFilters?: QueryFilter[]) {

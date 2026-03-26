@@ -47,7 +47,6 @@ export class FiltersService {
         dataSourceId: dto.dataSourceId,
         parentFilterId: dto.parentFilterId,
         targetMappings: (dto.targetMappings ?? []) as object,
-        valueField: dto.valueField,
         queryId: dto.queryId,
         order: nextOrder,
       },
@@ -66,7 +65,6 @@ export class FiltersService {
         ...(dto.dataSourceId !== undefined && { dataSourceId: dto.dataSourceId }),
         ...(dto.parentFilterId !== undefined && { parentFilterId: dto.parentFilterId }),
         ...(dto.targetMappings !== undefined && { targetMappings: dto.targetMappings as object }),
-        ...(dto.valueField !== undefined && { valueField: dto.valueField ?? null }),
         ...(dto.queryId !== undefined && { queryId: dto.queryId ?? null }),
       },
     });
@@ -95,38 +93,40 @@ export class FiltersService {
     pageSize: number,
     search?: string,
     parentValue?: unknown,
+    activeFilters?: Record<string, unknown[]>,
+    relationships?: {
+      id: string;
+      sourceFilterId: string;
+      targetFilterId: string;
+      sourceField: string;
+      targetField: string;
+    }[],
   ) {
     const filter = await this.findOne(filterId);
 
-    const labelField = filter.field;
-    const valField = filter.valueField ?? filter.field;
+    const fieldName = filter.field;
 
-    // Query-based filter: execute the saved query and extract values from the field column
+    // Query-based filter: execute the saved query and extract distinct values from the field column
     if (filter.queryId) {
       const result = await this.queries.execute(filter.queryId, userId);
-      // Build label→value pairs, dedup by value
       const seen = new Set<string>();
       let items: { label: string; value: unknown }[] = [];
       for (const row of result.data) {
-        const label = row[labelField];
-        const value = row[valField];
-        if (label == null || value == null) continue;
-        const key = String(value);
+        const val = row[fieldName];
+        if (val == null) continue;
+        const key = String(val);
         if (seen.has(key)) continue;
         seen.add(key);
-        items.push({ label: String(label), value });
+        items.push({ label: String(val), value: val });
       }
 
-      // Apply search filter on label
       if (search) {
         const regex = new RegExp(search, 'i');
         items = items.filter((i) => regex.test(i.label));
       }
 
-      // Sort by label
       items.sort((a, b) => a.label.localeCompare(b.label));
 
-      // Paginate
       const skip = (page - 1) * pageSize;
       return {
         items: items.slice(skip, skip + pageSize),
@@ -153,45 +153,30 @@ export class FiltersService {
       });
     }
 
+    // Apply relationship constraints: filter values based on active selections in related filters
+    if (relationships?.length && activeFilters) {
+      for (const rel of relationships) {
+        if (rel.targetFilterId !== filterId) continue;
+        const sourceValues = activeFilters[rel.sourceFilterId];
+        if (!sourceValues || sourceValues.length === 0) continue;
+        pipeline.push({
+          $match: {
+            [rel.targetField]: { $in: sourceValues },
+          },
+        });
+      }
+    }
+
     if (search) {
       pipeline.push({
-        $match: { [labelField]: { $regex: search, $options: 'i' } },
+        $match: { [fieldName]: { $regex: search, $options: 'i' } },
       });
     }
 
     const skip = (page - 1) * pageSize;
-    const hasValueField = filter.valueField && filter.valueField !== filter.field;
 
-    if (hasValueField) {
-      // Group by valueField, pick first label
-      pipeline.push(
-        {
-          $group: {
-            _id: `$${valField}`,
-            label: { $first: `$${labelField}` },
-          },
-        },
-        { $sort: { label: 1 } },
-        { $skip: skip },
-        { $limit: pageSize },
-      );
-
-      const results = await db
-        .collection(filter.collection)
-        .aggregate(pipeline)
-        .toArray();
-      return {
-        items: results
-          .filter((r) => r._id !== null)
-          .map((r) => ({ label: String(r.label), value: r._id })),
-        page,
-        pageSize,
-      };
-    }
-
-    // No valueField — label and value are the same
     pipeline.push(
-      { $group: { _id: `$${labelField}` } },
+      { $group: { _id: `$${fieldName}` } },
       { $sort: { _id: 1 } },
       { $skip: skip },
       { $limit: pageSize },

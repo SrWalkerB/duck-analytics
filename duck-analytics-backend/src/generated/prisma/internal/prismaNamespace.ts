@@ -1248,7 +1248,6 @@ export const DashboardFilterScalarFieldEnum = {
   dataSourceId: 'dataSourceId',
   parentFilterId: 'parentFilterId',
   targetMappings: 'targetMappings',
-  valueField: 'valueField',
   queryId: 'queryId',
   order: 'order',
   createdAt: 'createdAt',

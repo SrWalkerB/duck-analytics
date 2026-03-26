@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { ObjectId } from 'mongodb';
 
 export interface QueryFilter {
   field: string;
@@ -15,6 +16,7 @@ export interface QueryFilter {
     | 'regex'
     | 'exists';
   value: unknown;
+  fieldType?: string;
 }
 
 export interface QueryAggregation {
@@ -110,6 +112,24 @@ export interface PipelineConfiguration {
 }
 
 export type QueryConfigurationAny = QueryConfiguration | PipelineConfiguration;
+
+export interface FieldSchema {
+  name: string;
+  type: string;
+}
+
+export interface MatchableField {
+  name: string;
+  type: string;
+  origin: 'base' | 'lookup' | 'group';
+  stageLabel?: string;
+}
+
+interface FieldOrigin {
+  type: 'base' | 'lookup' | 'group';
+  /** Index in stages array, -1 for base collection fields */
+  stageIndex: number;
+}
 
 export function isPipelineConfiguration(
   config: unknown,
@@ -216,34 +236,61 @@ export class QueryBuilderService {
   }
 
   private buildCondition(filter: QueryFilter): unknown {
+    const coerce = (v: unknown) => this.coerceValue(v, filter.fieldType);
+
     switch (filter.operator) {
       case 'eq':
-        return filter.value;
+        return coerce(filter.value);
       case 'ne':
-        return { $ne: filter.value };
+        return { $ne: coerce(filter.value) };
       case 'gt':
-        return { $gt: filter.value };
+        return { $gt: coerce(filter.value) };
       case 'gte':
-        return { $gte: filter.value };
+        return { $gte: coerce(filter.value) };
       case 'lt':
-        return { $lt: filter.value };
+        return { $lt: coerce(filter.value) };
       case 'lte':
-        return { $lte: filter.value };
-      case 'in':
-        return {
-          $in: Array.isArray(filter.value) ? filter.value : [filter.value],
-        };
-      case 'nin':
-        return {
-          $nin: Array.isArray(filter.value) ? filter.value : [filter.value],
-        };
+        return { $lte: coerce(filter.value) };
+      case 'in': {
+        const arr = Array.isArray(filter.value)
+          ? filter.value
+          : [filter.value];
+        return { $in: arr.map(coerce) };
+      }
+      case 'nin': {
+        const arr = Array.isArray(filter.value)
+          ? filter.value
+          : [filter.value];
+        return { $nin: arr.map(coerce) };
+      }
       case 'regex':
         return { $regex: filter.value, $options: 'i' };
       case 'exists':
         return { $exists: Boolean(filter.value) };
       default:
-        return filter.value;
+        return coerce(filter.value);
     }
+  }
+
+  /**
+   * Coerce a value to the appropriate MongoDB type based on fieldType.
+   * Handles ObjectId string-to-ObjectId conversion and number coercion.
+   */
+  private coerceValue(value: unknown, fieldType?: string): unknown {
+    if (value === null || value === undefined) return value;
+
+    if (fieldType === 'objectId' && typeof value === 'string') {
+      if (/^[0-9a-fA-F]{24}$/.test(value)) {
+        return new ObjectId(value);
+      }
+    }
+
+    if (fieldType === 'number' && typeof value === 'string') {
+      const n = Number(value);
+      if (!isNaN(n)) return n;
+    }
+
+    return value;
   }
 
   private buildAggregation(agg: QueryAggregation): unknown {
@@ -265,23 +312,85 @@ export class QueryBuilderService {
 
   // ── Pipeline v2 compilation ──
 
+  /**
+   * Analyzes where a field originates in the pipeline (base collection, $lookup, or $group).
+   * Used to determine where to inject $match stages.
+   */
+  analyzeFieldOrigin(
+    config: PipelineConfiguration,
+    fieldName: string,
+  ): FieldOrigin {
+    const enabledStages = config.stages.filter((s) => s.enabled);
+
+    for (let i = 0; i < enabledStages.length; i++) {
+      const stage = enabledStages[i];
+
+      // Check if field comes from a $lookup (prefixed with "as.")
+      if (stage.type === '$lookup') {
+        const prefix = stage.as;
+        if (fieldName === prefix || fieldName.startsWith(`${prefix}.`)) {
+          return { type: 'lookup', stageIndex: i };
+        }
+      }
+
+      // Check if field comes from a $group (groupBy key or aggregation alias)
+      if (stage.type === '$group') {
+        const groupOutputFields = [
+          ...stage.groupBy.map((f) => f.replace(/\./g, '_')),
+          ...stage.aggregations.map((a) => a.alias),
+        ];
+        if (groupOutputFields.includes(fieldName)) {
+          return { type: 'group', stageIndex: i };
+        }
+      }
+    }
+
+    return { type: 'base', stageIndex: -1 };
+  }
+
   compilePipeline(
     config: PipelineConfiguration,
     injectedFilters?: QueryFilter[],
   ): unknown[] {
     const pipeline: unknown[] = [];
+    const enabledStages = config.stages.filter((s) => s.enabled);
 
-    // Prepend injected filters as an extra $match
-    if (injectedFilters && injectedFilters.length > 0) {
-      const match = this.buildMatch(injectedFilters);
-      if (Object.keys(match).length > 0) {
-        pipeline.push({ $match: match });
+    if (!injectedFilters || injectedFilters.length === 0) {
+      for (const stage of enabledStages) {
+        pipeline.push(...this.compileStage(stage));
       }
+      return pipeline;
     }
 
-    for (const stage of config.stages) {
-      if (!stage.enabled) continue;
+    // Group injected filters by their insertion point
+    const filtersByInsertionPoint = new Map<number, QueryFilter[]>();
+    for (const filter of injectedFilters) {
+      const origin = this.analyzeFieldOrigin(config, filter.field);
+      const insertAfter = origin.stageIndex; // -1 = prepend
+      if (!filtersByInsertionPoint.has(insertAfter)) {
+        filtersByInsertionPoint.set(insertAfter, []);
+      }
+      filtersByInsertionPoint.get(insertAfter)!.push(filter);
+    }
+
+    // Prepend base-field filters (stageIndex === -1)
+    const baseFilters = filtersByInsertionPoint.get(-1);
+    if (baseFilters?.length) {
+      const match = this.buildMatch(baseFilters);
+      if (Object.keys(match).length > 0) pipeline.push({ $match: match });
+    }
+
+    // Compile stages, inserting filters after their origin stage
+    for (let i = 0; i < enabledStages.length; i++) {
+      const stage = enabledStages[i];
       pipeline.push(...this.compileStage(stage));
+
+      // Insert any filters that depend on this stage
+      const stageFilters = filtersByInsertionPoint.get(i);
+      if (stageFilters?.length) {
+        const match = this.buildMatch(stageFilters);
+        if (Object.keys(match).length > 0) pipeline.push({ $match: match });
+      }
     }
 
     return pipeline;
@@ -313,6 +422,251 @@ export class QueryBuilderService {
       return this.compilePipeline(config, injectedFilters);
     }
     return this.compile(config, injectedFilters);
+  }
+
+  /**
+   * Statically analyzes a query configuration to determine its output fields.
+   * Walks pipeline stages in order, tracking how fields change through
+   * $lookup, $group, $project, and $unwind stages.
+   *
+   * @param config The query configuration (v1 or v2)
+   * @param baseFields Fields from the base collection
+   * @param foreignSchemas Map of collection name → fields for $lookup foreign collections
+   */
+  getOutputFields(
+    config: QueryConfigurationAny,
+    baseFields: FieldSchema[],
+    foreignSchemas: Map<string, FieldSchema[]> = new Map(),
+  ): FieldSchema[] {
+    if (isPipelineConfiguration(config)) {
+      return this.getOutputFieldsPipeline(config, baseFields, foreignSchemas);
+    }
+    return this.getOutputFieldsLegacy(
+      config,
+      baseFields,
+      foreignSchemas,
+    );
+  }
+
+  private getOutputFieldsPipeline(
+    config: PipelineConfiguration,
+    baseFields: FieldSchema[],
+    foreignSchemas: Map<string, FieldSchema[]>,
+  ): FieldSchema[] {
+    let fields = [...baseFields];
+
+    for (const stage of config.stages) {
+      if (!stage.enabled) continue;
+
+      switch (stage.type) {
+        case '$lookup': {
+          const foreign = foreignSchemas.get(stage.from) ?? [];
+          const prefixed = foreign.map((f) => ({
+            name: `${stage.as}.${f.name}`,
+            type: f.type,
+          }));
+          fields = [...fields, ...prefixed];
+          break;
+        }
+
+        case '$unwind':
+          // Unwind doesn't change the field set
+          break;
+
+        case '$group': {
+          // Group replaces all fields with groupBy keys + aggregation aliases
+          const groupFields: FieldSchema[] = [
+            ...stage.groupBy.map((f) => ({
+              name: f.replace(/\./g, '_'),
+              type: 'mixed',
+            })),
+            ...stage.aggregations.map((a) => ({
+              name: a.alias,
+              type: 'number',
+            })),
+          ];
+          if (groupFields.length > 0) {
+            fields = groupFields;
+          }
+          break;
+        }
+
+        case '$project': {
+          // Project restricts to included fields only
+          const included = new Set(stage.include);
+          fields = fields.filter((f) => included.has(f.name));
+          break;
+        }
+
+        // $match, $sort, $limit don't change the field set
+      }
+    }
+
+    return fields;
+  }
+
+  private getOutputFieldsLegacy(
+    config: QueryConfiguration,
+    baseFields: FieldSchema[],
+    foreignSchemas: Map<string, FieldSchema[]>,
+  ): FieldSchema[] {
+    let fields = [...baseFields];
+
+    // Lookups add foreign fields
+    for (const lookup of config.lookups ?? []) {
+      const foreign = foreignSchemas.get(lookup.from) ?? [];
+      const prefixed = foreign.map((f) => ({
+        name: `${lookup.as}.${f.name}`,
+        type: f.type,
+      }));
+      fields = [...fields, ...prefixed];
+    }
+
+    // Group replaces all fields
+    if (config.aggregations && config.aggregations.length > 0) {
+      fields = [
+        ...(config.groupBy ?? []).map((f) => ({
+          name: f.replace(/\./g, '_'),
+          type: 'mixed',
+        })),
+        ...config.aggregations.map((a) => ({
+          name: a.alias,
+          type: 'number',
+        })),
+      ];
+    } else if (config.projections && config.projections.length > 0) {
+      const included = new Set(config.projections);
+      fields = fields.filter((f) => included.has(f.name));
+    }
+
+    return fields;
+  }
+
+  /**
+   * Returns ALL fields where a $match can be injected at any point in the pipeline.
+   * Unlike getOutputFields (which returns only final output), this accumulates fields
+   * from every stage so the user can filter on base, lookup, or group fields.
+   */
+  getMatchableFields(
+    config: QueryConfigurationAny,
+    baseFields: FieldSchema[],
+    foreignSchemas: Map<string, FieldSchema[]> = new Map(),
+  ): MatchableField[] {
+    if (isPipelineConfiguration(config)) {
+      return this.getMatchableFieldsPipeline(config, baseFields, foreignSchemas);
+    }
+    return this.getMatchableFieldsLegacy(config, baseFields, foreignSchemas);
+  }
+
+  private getMatchableFieldsPipeline(
+    config: PipelineConfiguration,
+    baseFields: FieldSchema[],
+    foreignSchemas: Map<string, FieldSchema[]>,
+  ): MatchableField[] {
+    const result: MatchableField[] = baseFields.map((f) => ({
+      name: f.name,
+      type: f.type,
+      origin: 'base' as const,
+      stageLabel: 'Campos base',
+    }));
+
+    for (const stage of config.stages) {
+      if (!stage.enabled) continue;
+
+      switch (stage.type) {
+        case '$lookup': {
+          const foreign = foreignSchemas.get(stage.from) ?? [];
+          for (const f of foreign) {
+            result.push({
+              name: `${stage.as}.${f.name}`,
+              type: f.type,
+              origin: 'lookup',
+              stageLabel: `$lookup ${stage.from}`,
+            });
+          }
+          break;
+        }
+
+        case '$group': {
+          for (const f of stage.groupBy) {
+            result.push({
+              name: f.replace(/\./g, '_'),
+              type: 'mixed',
+              origin: 'group',
+              stageLabel: '$group',
+            });
+          }
+          for (const a of stage.aggregations) {
+            result.push({
+              name: a.alias,
+              type: 'number',
+              origin: 'group',
+              stageLabel: '$group',
+            });
+          }
+          break;
+        }
+      }
+    }
+
+    // Deduplicate by name (keep first occurrence)
+    const seen = new Set<string>();
+    return result.filter((f) => {
+      if (seen.has(f.name)) return false;
+      seen.add(f.name);
+      return true;
+    });
+  }
+
+  private getMatchableFieldsLegacy(
+    config: QueryConfiguration,
+    baseFields: FieldSchema[],
+    foreignSchemas: Map<string, FieldSchema[]>,
+  ): MatchableField[] {
+    const result: MatchableField[] = baseFields.map((f) => ({
+      name: f.name,
+      type: f.type,
+      origin: 'base' as const,
+      stageLabel: 'Campos base',
+    }));
+
+    for (const lookup of config.lookups ?? []) {
+      const foreign = foreignSchemas.get(lookup.from) ?? [];
+      for (const f of foreign) {
+        result.push({
+          name: `${lookup.as}.${f.name}`,
+          type: f.type,
+          origin: 'lookup',
+          stageLabel: `$lookup ${lookup.from}`,
+        });
+      }
+    }
+
+    if (config.aggregations && config.aggregations.length > 0) {
+      for (const f of config.groupBy ?? []) {
+        result.push({
+          name: f.replace(/\./g, '_'),
+          type: 'mixed',
+          origin: 'group',
+          stageLabel: '$group',
+        });
+      }
+      for (const a of config.aggregations) {
+        result.push({
+          name: a.alias,
+          type: 'number',
+          origin: 'group',
+          stageLabel: '$group',
+        });
+      }
+    }
+
+    const seen = new Set<string>();
+    return result.filter((f) => {
+      if (seen.has(f.name)) return false;
+      seen.add(f.name);
+      return true;
+    });
   }
 
   convertLegacyToPipeline(config: QueryConfiguration): PipelineConfiguration {

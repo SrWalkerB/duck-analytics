@@ -190,7 +190,6 @@ model DashboardFilter {
   parent             DashboardFilter?  @relation("FilterChain", fields: [parentFilterId], references: [id])
   children           DashboardFilter[] @relation("FilterChain")
   targetMappings     Json        @default("[]") @map("target_mappings")
-  valueField         String?     @map("value_field")
   queryId            String?     @map("query_id")
   order              Int         @default(0)
   query              Query?      @relation(fields: [queryId], references: [id])

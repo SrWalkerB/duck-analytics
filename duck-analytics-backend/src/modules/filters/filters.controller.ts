@@ -63,4 +63,36 @@ export class FiltersController {
       parentValue,
     );
   }
+
+  @Post(':filterId/values')
+  getValuesWithConstraints(
+    @Param('filterId') filterId: string,
+    @CurrentUser() userId: string,
+    @Body()
+    body: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      parentValue?: string;
+      activeFilters?: Record<string, unknown[]>;
+      relationships?: {
+        id: string;
+        sourceFilterId: string;
+        targetFilterId: string;
+        sourceField: string;
+        targetField: string;
+      }[];
+    },
+  ) {
+    return this.service.getValues(
+      filterId,
+      userId,
+      body.page ?? 1,
+      body.pageSize ?? 20,
+      body.search,
+      body.parentValue,
+      body.activeFilters,
+      body.relationships,
+    );
+  }
 }

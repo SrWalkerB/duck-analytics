@@ -1,0 +1,14 @@
+{
+  "name": "duck-analytics",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm docker:up && concurrently --names \"BACK,FRONT\" --prefix-colors \"cyan,magenta\" \"pnpm --filter duck-analytics-backend start:dev\" \"pnpm --filter duck-analytics-front dev\"",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "install:all": "pnpm --filter duck-analytics-backend install && pnpm --filter duck-analytics-front install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

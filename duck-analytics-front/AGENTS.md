@@ -112,6 +112,60 @@ import { toast } from 'sonner'
 
 Para adicionar novos componentes shadcn: `npx shadcn add <nome>`. Os arquivos gerados vão para `src/components/ui/` e podem ser editados livremente.
 
+### Padrão obrigatório para Select
+
+**Todo `<Select>` deve:**
+
+1. **Ter um ícone à esquerda** no `<SelectTrigger>`, usando um ícone do `lucide-react` que faça sentido para o contexto (ex: `Database` para data source, `Layers` para collection, `Search` para query, etc.)
+2. **Ter uma barra de busca** dentro do `<SelectContent>`, com um `<Input>` para filtrar as opções em tempo real
+
+```tsx
+import { useState } from 'react'
+import { Database } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
+// Estado local de busca por Select
+const [search, setSearch] = useState('')
+
+const filtered = search
+  ? items.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()))
+  : items
+
+<Select value={value} onValueChange={setValue}>
+  <SelectTrigger className="h-8 text-sm">
+    {/* Envolver ícone + SelectValue em span flex-1 para manter o chevron no canto direito */}
+    <span className="flex flex-1 items-center">
+      <Database className="mr-2 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+      <SelectValue placeholder="Selecionar..." />
+    </span>
+  </SelectTrigger>
+  <SelectContent>
+    <div className="p-1">
+      <Input
+        className="h-7 text-xs"
+        placeholder="Buscar..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        onKeyDown={(e) => e.stopPropagation()}
+      />
+    </div>
+    {filtered.map((item) => (
+      <SelectItem key={item.id} value={item.id}>
+        {item.name}
+      </SelectItem>
+    ))}
+    {filtered.length === 0 && search && (
+      <div className="p-2 text-center text-xs text-muted-foreground">
+        Nenhum resultado encontrado
+      </div>
+    )}
+  </SelectContent>
+</Select>
+```
+
+> **Importante:** o `onKeyDown={(e) => e.stopPropagation()}` no Input é obrigatório para evitar que o shadcn/ui intercepte as teclas e feche o dropdown durante a digitação.
+
 ### Estrutura de uma página típica
 
 ```tsx

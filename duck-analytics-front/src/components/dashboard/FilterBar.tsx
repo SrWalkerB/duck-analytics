@@ -8,13 +8,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
-import type { DashboardFilter } from '@/types'
+import type { DashboardFilter, FilterRelationship } from '@/types'
 
 interface FilterBarProps {
   dashboardId: string
   filters: DashboardFilter[]
   activeFilters: Record<string, unknown[]>
   onFiltersChange: (filters: Record<string, unknown[]>) => void
+  relationships?: FilterRelationship[]
 }
 
 export function FilterBar({
@@ -22,6 +23,7 @@ export function FilterBar({
   filters,
   activeFilters,
   onFiltersChange,
+  relationships = [],
 }: FilterBarProps) {
   // Sort filters: parents first, then children
   const sortedFilters = useMemo(() => {
@@ -60,6 +62,12 @@ export function FilterBar({
     for (const id of descendantIds) {
       delete next[id]
     }
+    // Clear relationship target filters when source changes
+    for (const rel of relationships) {
+      if (rel.sourceFilterId === filterId) {
+        delete next[rel.targetFilterId]
+      }
+    }
     onFiltersChange(next)
   }
 
@@ -91,6 +99,8 @@ export function FilterBar({
             }
             disabled={!!filter.parentFilterId && !parentSelected}
             onChange={(values) => handleFilterChange(filter.id, values)}
+            activeFilters={activeFilters}
+            relationships={relationships}
           />
         )
       })}
@@ -116,6 +126,8 @@ interface FilterDropdownProps {
   parentValues?: unknown[]
   disabled: boolean
   onChange: (values: unknown[]) => void
+  activeFilters: Record<string, unknown[]>
+  relationships: FilterRelationship[]
 }
 
 function FilterDropdown({
@@ -125,6 +137,8 @@ function FilterDropdown({
   parentValues,
   disabled,
   onChange,
+  activeFilters,
+  relationships,
 }: FilterDropdownProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -132,6 +146,19 @@ function FilterDropdown({
   const parentValueParam = parentValues?.length
     ? parentValues.join(',')
     : undefined
+
+  // Check if this filter is a target of any relationship with active source values
+  const hasRelConstraints = relationships.some(
+    (r) =>
+      r.targetFilterId === filter.id &&
+      (activeFilters[r.sourceFilterId] ?? []).length > 0,
+  )
+
+  // Build a stable key for relationship constraints to trigger refetch
+  const relConstraintKey = relationships
+    .filter((r) => r.targetFilterId === filter.id)
+    .map((r) => `${r.sourceFilterId}:${(activeFilters[r.sourceFilterId] ?? []).join(',')}`)
+    .join('|')
 
   const { data: valuesData, isLoading } = useQuery<{
     items: { label: string; value: unknown }[]
@@ -144,8 +171,25 @@ function FilterDropdown({
       filter.id,
       search,
       parentValueParam,
+      relConstraintKey,
     ],
     queryFn: () => {
+      // Use POST when we have relationship constraints
+      if (hasRelConstraints) {
+        return api
+          .post(
+            `/v1/dashboards/${dashboardId}/filters/${filter.id}/values`,
+            {
+              page: 1,
+              pageSize: 100,
+              search: search || undefined,
+              parentValue: parentValueParam,
+              activeFilters,
+              relationships,
+            },
+          )
+          .then((r) => r.data)
+      }
       const params = new URLSearchParams({ page: '1', pageSize: '100' })
       if (search) params.set('search', search)
       if (parentValueParam) params.set('parentValue', parentValueParam)

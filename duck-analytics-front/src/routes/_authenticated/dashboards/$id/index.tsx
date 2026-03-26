@@ -1,15 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { GripVertical, Pencil, Plus, SlidersHorizontal } from 'lucide-react'
+import { GripVertical, Link2, Pencil, Plus, SlidersHorizontal } from 'lucide-react'
 import { api } from '@/services/api'
-import type { Dashboard, DashboardComponent, DashboardFilter, Component, DashboardTab } from '@/types'
+import type { Dashboard, DashboardComponent, DashboardFilter, Component, DashboardTab, FilterRelationship } from '@/types'
 import { Button } from '@/components/ui/button'
 import { DashboardGrid } from '@/components/dashboard/DashboardGrid'
 import { DashboardEditBanner } from '@/components/dashboard/DashboardEditBanner'
 import { AddQuestionPanel } from '@/components/dashboard/AddQuestionPanel'
 import { FilterBar } from '@/components/dashboard/FilterBar'
 import { FilterEditorPanel } from '@/components/dashboard/FilterEditorPanel'
+import { FilterRelationshipPanel } from '@/components/dashboard/FilterRelationshipPanel'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import {
@@ -81,6 +82,7 @@ function DashboardPage() {
   const [editingFilter, setEditingFilter] = useState<DashboardFilter | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [activeFilters, setActiveFilters] = useState<Record<string, unknown[]>>({})
+  const [relationshipPanelOpen, setRelationshipPanelOpen] = useState(false)
 
   const { data: dashboard, isLoading } = useQuery<Dashboard>({
     queryKey: ['dashboard', id],
@@ -361,6 +363,17 @@ function DashboardPage() {
                   <SlidersHorizontal className="h-4 w-4" />
                   Adicionar filtro
                 </Button>
+                {dashboard.dashboardFilters.length >= 2 && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1"
+                    onClick={() => setRelationshipPanelOpen(true)}
+                  >
+                    <Link2 className="h-4 w-4" />
+                    Relacionamentos
+                  </Button>
+                )}
                 <Button size="sm" variant="outline" className="gap-1" onClick={() => setAddPanelOpen(true)}>
                   <Plus className="h-4 w-4" />
                   Adicionar questão
@@ -384,6 +397,9 @@ function DashboardPage() {
             filters={dashboard.dashboardFilters}
             activeFilters={activeFilters}
             onFiltersChange={setActiveFilters}
+            relationships={
+              (dashboard.configuration?.filterRelationships as FilterRelationship[] | undefined) ?? []
+            }
           />
         )}
 
@@ -435,8 +451,30 @@ function DashboardPage() {
             }}
             dashboardId={id}
             dashboardComponents={visibleDashboard.dashboardComponents}
-            existingFilters={dashboard.dashboardFilters}
+            tabs={tabs}
             editingFilter={editingFilter}
+          />
+          <FilterRelationshipPanel
+            open={relationshipPanelOpen}
+            onClose={() => setRelationshipPanelOpen(false)}
+            filters={dashboard.dashboardFilters}
+            relationships={
+              (dashboard.configuration?.filterRelationships as FilterRelationship[] | undefined) ?? []
+            }
+            onSave={async (rels) => {
+              try {
+                await api.put(`/v1/dashboards/${id}`, {
+                  configuration: {
+                    ...dashboard.configuration,
+                    filterRelationships: rels,
+                  },
+                })
+                qc.invalidateQueries({ queryKey: ['dashboard', id] })
+                toast.success('Relacionamentos salvos')
+              } catch {
+                toast.error('Erro ao salvar relacionamentos')
+              }
+            }}
           />
         </>
       )}

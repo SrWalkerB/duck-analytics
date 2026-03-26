@@ -86,6 +86,7 @@ export type LookupStage = PipelineStageBase & {
   foreignField: string
   as: string
   unwind?: boolean
+  _foreignFields?: FieldSchema[]
 }
 
 export type GroupStage = PipelineStageBase & {
@@ -197,6 +198,8 @@ export interface DashboardComponent {
 export interface FilterTargetMapping {
   componentId: string
   targetField: string
+  valueField?: string
+  fieldType?: string
 }
 
 export interface DashboardFilter {
@@ -209,7 +212,6 @@ export interface DashboardFilter {
   dataSourceId: string
   parentFilterId: string | null
   targetMappings: FilterTargetMapping[]
-  valueField: string | null
   queryId: string | null
 }
 
@@ -229,6 +231,21 @@ export interface Dashboard {
 export interface FieldSchema {
   name: string
   type: string
+}
+
+export interface MatchableField {
+  name: string
+  type: string
+  origin: 'base' | 'lookup' | 'group'
+  stageLabel?: string
+}
+
+export interface FilterRelationship {
+  id: string
+  sourceFilterId: string
+  targetFilterId: string
+  sourceField: string
+  targetField: string
 }
 
 export interface Folder {

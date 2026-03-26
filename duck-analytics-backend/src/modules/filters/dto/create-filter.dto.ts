@@ -11,8 +11,9 @@ export const createFilterSchema = z.object({
   targetMappings: z.array(z.object({
     componentId: z.string(),
     targetField: z.string(),
+    valueField: z.string().optional(),
+    fieldType: z.string().optional(),
   })).default([]),
-  valueField: z.string().optional(),
   queryId: z.string().optional(),
 });
 

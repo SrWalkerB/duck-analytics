@@ -96,4 +96,14 @@ export class ComponentsService {
     const component = await this.findOne(id, userId);
     return this.queries.execute(component.queryId, userId, injectedFilters);
   }
+
+  async getOutputFields(id: string, userId: string) {
+    const component = await this.findOne(id, userId);
+    return this.queries.getOutputFields(component.queryId, userId);
+  }
+
+  async getMatchableFields(id: string, userId: string) {
+    const component = await this.findOne(id, userId);
+    return this.queries.getMatchableFields(component.queryId, userId);
+  }
 }

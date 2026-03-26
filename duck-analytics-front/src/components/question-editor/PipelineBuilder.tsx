@@ -100,13 +100,17 @@ export function PipelineBuilder({
 
   const getAvailableFields = useCallback(
     (stageIndex: number): FieldSchema[] => {
+      // Collect fields added by $lookup stages as we walk backward
+      let lookupFields: FieldSchema[] = []
+
       for (let i = stageIndex - 1; i >= 0; i--) {
         // Intermediate result from running to here takes priority
         const result = intermediateResults.get(stages[i]!.id)
         if (result) return result.inferredFields
 
-        // Derive output fields from $group definition without needing to run it
         const s = stages[i]!
+
+        // Derive output fields from $group definition without needing to run it
         if (s.type === '$group' && s.enabled) {
           const derived: FieldSchema[] = [
             ...s.groupBy.map((f) => ({ name: f, type: 'mixed' as const })),
@@ -116,6 +120,20 @@ export function PipelineBuilder({
           ]
           if (derived.length > 0) return derived
         }
+
+        // Derive output fields from $lookup — adds foreign collection fields
+        if (s.type === '$lookup' && s.enabled && s._foreignFields?.length && s.as) {
+          const prefix = s.as
+          const foreignFields = s._foreignFields.map((f) => ({
+            name: `${prefix}.${f.name}`,
+            type: f.type,
+          }))
+          lookupFields = [...lookupFields, ...foreignFields]
+        }
+      }
+
+      if (lookupFields.length > 0) {
+        return [...baseFields, ...lookupFields]
       }
       return baseFields
     },
