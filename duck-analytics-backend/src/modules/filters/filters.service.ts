@@ -155,16 +155,54 @@ export class FiltersService {
 
     // Apply relationship constraints: filter values based on active selections in related filters
     if (relationships?.length && activeFilters) {
+      console.log('[getValues] Relationship constraints:', JSON.stringify({ filterId, relationships: relationships.length, activeFilters }));
       for (const rel of relationships) {
         if (rel.targetFilterId !== filterId) continue;
         const sourceValues = activeFilters[rel.sourceFilterId];
         if (!sourceValues || sourceValues.length === 0) continue;
+
+        // Translate source filter's selected values (field/label values) to sourceField values
+        // e.g. selected category names → category _id values
+        const sourceFilter = await this.findOne(rel.sourceFilterId);
+        let matchValues: unknown[] = sourceValues;
+
+        console.log('[getValues] Rel constraint:', JSON.stringify({
+          sourceField: rel.sourceField,
+          targetField: rel.targetField,
+          sourceFilterField: sourceFilter.field,
+          sourceValues,
+          needsTranslation: rel.sourceField !== sourceFilter.field,
+        }));
+
+        if (rel.sourceField !== sourceFilter.field) {
+          const sourceDs = await this.dataSources.findOne(
+            sourceFilter.dataSourceId,
+            userId,
+          );
+          const sourceDb = await this.mongodb.getDb(
+            sourceDs.connectionString,
+            sourceDs.database,
+          );
+          const translated = await sourceDb
+            .collection(sourceFilter.collection)
+            .aggregate([
+              { $match: { [sourceFilter.field]: { $in: sourceValues } } },
+              { $group: { _id: `$${rel.sourceField}` } },
+            ])
+            .toArray();
+          matchValues = translated
+            .map((r) => r._id)
+            .filter((v) => v != null);
+          console.log('[getValues] Translated values:', matchValues);
+        }
+
         pipeline.push({
           $match: {
-            [rel.targetField]: { $in: sourceValues },
+            [rel.targetField]: { $in: matchValues },
           },
         });
       }
+      console.log('[getValues] Final pipeline:', JSON.stringify(pipeline));
     }
 
     if (search) {
