@@ -10,6 +10,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import { ChevronsUpDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { api } from '@/services/api'
 import type { LookupStage, FieldSchema } from '@/types'
 
@@ -28,6 +39,9 @@ export function LookupStageEditor({
   collections,
   onUpdate,
 }: Props) {
+  const [collectionOpen, setCollectionOpen] = useState(false)
+  const [localFieldOpen, setLocalFieldOpen] = useState(false)
+
   // Local state for debounced "as" field
   const [localAs, setLocalAs] = useState(stage.as)
 
@@ -68,33 +82,85 @@ export function LookupStageEditor({
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-0.5">
           <Label className="text-[10px] text-muted-foreground">Collection (from)</Label>
-          <Select value={stage.from} onValueChange={(v) => onUpdate({ from: v })}>
-            <SelectTrigger className="h-6 text-xs">
-              <SelectValue placeholder="collection" />
-            </SelectTrigger>
-            <SelectContent>
-              {collections.map((c) => (
-                <SelectItem key={c} value={c}>
-                  {c}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={collectionOpen} onOpenChange={setCollectionOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className={cn(
+                  'flex h-6 w-full items-center justify-between rounded-md border border-input bg-background px-2 text-xs shadow-xs ring-offset-background',
+                  'hover:bg-accent/50 focus:outline-none focus:ring-1 focus:ring-ring',
+                  !stage.from && 'text-muted-foreground',
+                )}
+              >
+                <span className="truncate">{stage.from || 'collection'}</span>
+                <ChevronsUpDown className="ml-1 size-3 shrink-0 opacity-50" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-0" align="start" sideOffset={4}>
+              <Command>
+                <CommandInput placeholder="Buscar coleção..." className="text-xs" />
+                <CommandList>
+                  <CommandEmpty className="py-3 text-xs">Nenhuma coleção encontrada.</CommandEmpty>
+                  <CommandGroup>
+                    {collections.map((c) => (
+                      <CommandItem
+                        key={c}
+                        value={c}
+                        data-checked={stage.from === c}
+                        onSelect={(v) => {
+                          onUpdate({ from: v })
+                          setCollectionOpen(false)
+                        }}
+                        className="text-xs"
+                      >
+                        {c}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="space-y-0.5">
           <Label className="text-[10px] text-muted-foreground">Local field</Label>
-          <Select value={stage.localField} onValueChange={(v) => onUpdate({ localField: v })}>
-            <SelectTrigger className="h-6 text-xs">
-              <SelectValue placeholder="campo" />
-            </SelectTrigger>
-            <SelectContent>
-              {fields.map((f) => (
-                <SelectItem key={f.name} value={f.name}>
-                  {f.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={localFieldOpen} onOpenChange={setLocalFieldOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className={cn(
+                  'flex h-6 w-full items-center justify-between rounded-md border border-input bg-background px-2 text-xs shadow-xs ring-offset-background',
+                  'hover:bg-accent/50 focus:outline-none focus:ring-1 focus:ring-ring',
+                  !stage.localField && 'text-muted-foreground',
+                )}
+              >
+                <span className="truncate">{stage.localField || 'campo'}</span>
+                <ChevronsUpDown className="ml-1 size-3 shrink-0 opacity-50" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-0" align="start" sideOffset={4}>
+              <Command>
+                <CommandInput placeholder="Buscar campo..." className="text-xs" />
+                <CommandList>
+                  <CommandEmpty className="py-3 text-xs">Nenhum campo encontrado.</CommandEmpty>
+                  <CommandGroup>
+                    {fields.map((f) => (
+                      <CommandItem
+                        key={f.name}
+                        value={f.name}
+                        data-checked={stage.localField === f.name}
+                        onSelect={(v) => {
+                          onUpdate({ localField: v })
+                          setLocalFieldOpen(false)
+                        }}
+                        className="text-xs"
+                      >
+                        {f.name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
