@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Filter, X, ChevronDown, Search } from 'lucide-react'
 import { api } from '@/services/api'
 import { Button } from '@/components/ui/button'
@@ -25,6 +25,8 @@ export function FilterBar({
   onFiltersChange,
   relationships = [],
 }: FilterBarProps) {
+  const qc = useQueryClient()
+
   // Sort filters: parents first, then children
   const sortedFilters = useMemo(() => {
     const roots = filters.filter((f) => !f.parentFilterId)
@@ -69,6 +71,44 @@ export function FilterBar({
       }
     }
     onFiltersChange(next)
+
+    // Eagerly fetch related target filter values as soon as source changes.
+    // This guarantees a backend call at selection time (not only on dropdown open).
+    const affectedTargets = [...new Set(
+      relationships
+        .filter((r) => r.sourceFilterId === filterId)
+        .map((r) => r.targetFilterId),
+    )]
+
+    for (const targetFilterId of affectedTargets) {
+      const targetRelationships = relationships.filter(
+        (r) => r.targetFilterId === targetFilterId,
+      )
+      const relConstraintKey = targetRelationships
+        .map((r) => `${r.id}:${serializeFilterValues(next[r.sourceFilterId])}`)
+        .join('|')
+
+      void qc.prefetchQuery({
+        queryKey: [
+          'filter-values',
+          dashboardId,
+          targetFilterId,
+          '',
+          undefined,
+          relConstraintKey,
+        ],
+        queryFn: () =>
+          api
+            .post(`/v1/dashboards/${dashboardId}/filters/${targetFilterId}/values`, {
+              page: 1,
+              pageSize: 100,
+              activeFilters: next,
+              relationships: targetRelationships,
+            })
+            .then((r) => r.data),
+        staleTime: 0,
+      })
+    }
   }
 
   function handleClearAll() {
@@ -130,6 +170,17 @@ interface FilterDropdownProps {
   relationships: FilterRelationship[]
 }
 
+function serializeFilterValues(values: unknown[] | undefined) {
+  if (!values || values.length === 0) return ''
+  return values
+    .map((v) => {
+      if (v === null || v === undefined) return ''
+      if (typeof v === 'object') return JSON.stringify(v)
+      return String(v)
+    })
+    .join('|')
+}
+
 function FilterDropdown({
   dashboardId,
   filter,
@@ -147,23 +198,18 @@ function FilterDropdown({
     ? parentValues.join(',')
     : undefined
 
-  // Check if this filter is a target of any relationship with active source values
-  const hasRelConstraints = relationships.some(
-    (r) =>
-      r.targetFilterId === filter.id &&
-      (activeFilters[r.sourceFilterId] ?? []).length > 0,
-  )
+  const targetRelationships = relationships.filter((r) => r.targetFilterId === filter.id)
 
   // Build a stable key for relationship constraints to trigger refetch
-  const relConstraintKey = relationships
-    .filter((r) => r.targetFilterId === filter.id)
-    .map((r) => `${r.sourceFilterId}:${(activeFilters[r.sourceFilterId] ?? []).join(',')}`)
+  const relConstraintKey = targetRelationships
+    .map((r) => `${r.id}:${serializeFilterValues(activeFilters[r.sourceFilterId])}`)
     .join('|')
 
   const { data: valuesData, isLoading } = useQuery<{
     items: { label: string; value: unknown }[]
     page: number
     pageSize: number
+    total?: number
   }>({
     queryKey: [
       'filter-values',
@@ -174,8 +220,9 @@ function FilterDropdown({
       relConstraintKey,
     ],
     queryFn: () => {
-      // Use POST when we have relationship constraints
-      if (hasRelConstraints) {
+      // Use POST whenever there are relationships configured so backend can
+      // always evaluate current active filters consistently.
+      if (relationships.length > 0) {
         return api
           .post(
             `/v1/dashboards/${dashboardId}/filters/${filter.id}/values`,
@@ -185,7 +232,7 @@ function FilterDropdown({
               search: search || undefined,
               parentValue: parentValueParam,
               activeFilters,
-              relationships,
+              relationships: targetRelationships,
             },
           )
           .then((r) => r.data)
@@ -200,10 +247,19 @@ function FilterDropdown({
         .then((r) => r.data)
     },
     enabled: open && !disabled,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 
   const items = valuesData?.items ?? []
-  const count = selectedValues.length
+  const selectedCount = selectedValues.length
+  const hasActiveRelationshipSource = relationships.some(
+    (r) =>
+      r.targetFilterId === filter.id &&
+      (activeFilters[r.sourceFilterId] ?? []).length > 0,
+  )
+  const constrainedCount = hasActiveRelationshipSource ? (valuesData?.total ?? items.length) : 0
+  const badgeCount = selectedCount > 0 ? selectedCount : constrainedCount
 
   function toggleValue(val: unknown) {
     const strVal = String(val)
@@ -231,18 +287,18 @@ function FilterDropdown({
           variant="outline"
           className={cn(
             'h-7 gap-1 text-xs',
-            count > 0 && 'border-primary text-primary',
+            badgeCount > 0 && 'border-primary text-primary',
             disabled && 'cursor-not-allowed opacity-50',
           )}
           disabled={disabled}
         >
           {filter.label}
-          {count > 0 && (
+          {badgeCount > 0 && (
             <Badge
               variant="secondary"
               className="ml-1 h-4 min-w-4 px-1 text-[10px]"
             >
-              {count}
+              {badgeCount}
             </Badge>
           )}
           <ChevronDown className="h-3 w-3" />
@@ -267,7 +323,9 @@ function FilterDropdown({
             </div>
           ) : items.length === 0 ? (
             <div className="p-3 text-center text-xs text-muted-foreground">
-              Nenhum valor encontrado
+              {hasActiveRelationshipSource
+                ? 'Nenhum valor encontrado com os relacionamentos ativos. Revise os campos vinculados.'
+                : 'Nenhum valor encontrado'}
             </div>
           ) : (
             items.map((item) => {

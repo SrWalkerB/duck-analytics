@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './lib/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DataSourcesModule } from './modules/data-sources/data-sources.module';
@@ -8,9 +10,16 @@ import { DashboardsModule } from './modules/dashboards/dashboards.module';
 import { FiltersModule } from './modules/filters/filters.module';
 import { FoldersModule } from './modules/folders/folders.module';
 import { AIModule } from './modules/ai/ai.module';
+import { env } from './env';
 
 @Module({
   imports: [
+    ThrottlerModule.forRoot([
+      {
+        ttl: env.RATE_LIMIT_TTL,
+        limit: env.RATE_LIMIT_LIMIT,
+      },
+    ]),
     PrismaModule,
     AuthModule,
     DataSourcesModule,
@@ -20,6 +29,12 @@ import { AIModule } from './modules/ai/ai.module';
     FiltersModule,
     FoldersModule,
     AIModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}

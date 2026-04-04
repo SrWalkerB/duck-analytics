@@ -47,6 +47,31 @@ type PieLabelProps = {
   name?: unknown
 }
 
+const MAX_X_TICK_LENGTH = 16
+
+function formatXAxisTick(value: unknown) {
+  const text = String(value ?? '')
+  if (text.length <= MAX_X_TICK_LENGTH) return text
+  return `${text.slice(0, MAX_X_TICK_LENGTH - 3)}...`
+}
+
+function formatPieLabelValue(
+  labelType: NonNullable<ChartDisplayConfig['labelType']>,
+  value: unknown,
+  name: unknown,
+  total: number,
+) {
+  if (labelType === 'none') return ''
+  if (labelType === 'name') return String(name ?? '')
+  if (labelType === 'value') {
+    return typeof value === 'number' ? value.toLocaleString() : String(value ?? '')
+  }
+
+  const numeric = typeof value === 'number' ? value : Number(value)
+  if (!isFinite(numeric) || !total) return '0%'
+  return `${((numeric / total) * 100).toFixed(0)}%`
+}
+
 export function ChartRenderer({ type, data, configuration }: Props) {
   if (!data || data.length === 0) {
     return (
@@ -120,6 +145,10 @@ export function ChartRenderer({ type, data, configuration }: Props) {
   const xAxisProps = {
     dataKey: xField,
     tick: { fontSize: 11 },
+    interval: 0 as const,
+    minTickGap: 0,
+    tickMargin: 8,
+    tickFormatter: formatXAxisTick,
     ...(xAxisLabel
       ? {
           label: { value: xAxisLabel, position: 'insideBottom' as const, offset: -8, fontSize: 11 },
@@ -147,6 +176,52 @@ export function ChartRenderer({ type, data, configuration }: Props) {
   if (type === 'PIE_CHART') {
     const innerRadius = display.innerRadius ?? 0
     const labelType = display.labelType ?? 'percentage'
+    const appendPieLabelToLegend = display.appendPieLabelToLegend === true
+    const hasManySlices = data.length > 4
+    const effectiveLabelType = hasManySlices ? 'percentage' : labelType
+    const outerRadius = hasManySlices ? '52%' : '62%'
+    const pieCenterY = showLegend ? '44%' : '50%'
+    const pieTotal = data.reduce((acc, row) => {
+      const n = row[yField]
+      const asNumber = typeof n === 'number' ? n : Number(n)
+      return isFinite(asNumber) ? acc + asNumber : acc
+    }, 0)
+
+    const pieLegendMeta = new Map<string, string>()
+    for (const row of data) {
+      const name = String(row[xField] ?? '')
+      const suffix = formatPieLabelValue(labelType, row[yField], row[xField], pieTotal)
+      if (suffix) pieLegendMeta.set(name, suffix)
+    }
+
+    const renderCompactLabel = ({
+      cx = 0,
+      cy = 0,
+      midAngle = 0,
+      innerRadius = 0,
+      outerRadius = 0,
+      percent = 0,
+    }: PieLabelProps) => {
+      if (percent < 0.08) return null
+      const RADIAN = Math.PI / 180
+      const radius = innerRadius + (outerRadius - innerRadius) * 0.55
+      const x = cx + radius * Math.cos(-midAngle * RADIAN)
+      const y = cy + radius * Math.sin(-midAngle * RADIAN)
+
+      return (
+        <text
+          x={x}
+          y={y}
+          fill="white"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={11}
+          fontWeight={600}
+        >
+          {(percent * 100).toFixed(0)}%
+        </text>
+      )
+    }
 
     const renderLabel = ({ cx = 0, cy = 0, midAngle = 0, outerRadius = 0, percent = 0, value, name, index }: PieLabelProps & { index?: number }) => {
       if (labelType === 'none' || percent < 0.005) return null
@@ -200,17 +275,23 @@ export function ChartRenderer({ type, data, configuration }: Props) {
 
     return (
       <ResponsiveContainer width="100%" height="100%">
-        <PieChart margin={{ top: 20, right: 80, bottom: 20, left: 80 }}>
+        <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
           <Pie
             data={data}
             dataKey={yField}
             nameKey={xField}
             cx="50%"
-            cy="50%"
-            outerRadius="65%"
+            cy={pieCenterY}
+            outerRadius={outerRadius}
             innerRadius={innerRadius > 0 ? `${innerRadius}%` : 0}
             labelLine={false}
-            label={labelType !== 'none' ? renderLabel : undefined}
+            label={
+              effectiveLabelType === 'none'
+                ? undefined
+                : hasManySlices
+                  ? renderCompactLabel
+                  : renderLabel
+            }
           >
             {data.map((_, i) => (
               <Cell
@@ -230,7 +311,15 @@ export function ChartRenderer({ type, data, configuration }: Props) {
               layout="horizontal"
               verticalAlign="bottom"
               align="center"
-              wrapperStyle={{ paddingTop: 8, fontSize: 12 }}
+              iconSize={10}
+              wrapperStyle={{ paddingTop: 8, fontSize: 11 }}
+              formatter={(value) => {
+                const base = String(value ?? '')
+                if (!appendPieLabelToLegend) return base
+                const suffix = pieLegendMeta.get(base)
+                if (!suffix) return base
+                return `${base} (${suffix})`
+              }}
             />
           )}
         </PieChart>

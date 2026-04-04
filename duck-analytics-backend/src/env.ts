@@ -8,6 +8,11 @@ export const envSchema = z.object({
   DATABASE_URL: z.string(),
   JWT_SECRET: z.string(),
   ENCRYPTION_KEY: z.string().length(64),
+  CORS_ALLOWED_ORIGINS: z
+    .string()
+    .default('http://localhost:5173,http://localhost:5174'),
+  RATE_LIMIT_TTL: z.coerce.number().default(60_000),
+  RATE_LIMIT_LIMIT: z.coerce.number().default(100),
 });
 
 export const env = envSchema.parse(process.env);

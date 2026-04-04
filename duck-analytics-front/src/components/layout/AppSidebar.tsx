@@ -1,4 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
+import { Blocks, Database, LayoutDashboard, LogOut, Settings } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -14,9 +15,9 @@ import {
 import { Button } from '@/components/ui/button'
 
 const navItems = [
-  { label: 'Dashboards', to: '/dashboards' },
-  { label: 'Questions', to: '/questions' },
-  { label: 'Data Sources', to: '/data-sources' },
+  { label: 'Dashboards', to: '/dashboards', icon: LayoutDashboard },
+  { label: 'Components', to: '/questions', icon: Blocks },
+  { label: 'Data Sources', to: '/data-sources', icon: Database },
 ]
 
 export function AppSidebar() {
@@ -42,7 +43,10 @@ export function AppSidebar() {
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.to}>
                   <SidebarMenuButton asChild>
-                    <Link to={item.to}>{item.label}</Link>
+                    <Link to={item.to}>
+                      <item.icon className="size-4" />
+                      <span>{item.label}</span>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -55,7 +59,10 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link to="/settings">Settings</Link>
+                  <Link to="/settings">
+                    <Settings className="size-4" />
+                    <span>Settings</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -64,7 +71,8 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <Button variant="ghost" className="w-full justify-start" onClick={handleSignOut}>
-          Sign Out
+          <LogOut className="size-4" />
+          <span>Sign Out</span>
         </Button>
       </SidebarFooter>
     </Sidebar>

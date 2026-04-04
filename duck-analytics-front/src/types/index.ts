@@ -154,6 +154,7 @@ export interface ChartDisplayConfig {
   showDataLabels?: boolean
   innerRadius?: number
   labelType?: 'value' | 'percentage' | 'name' | 'none'
+  appendPieLabelToLegend?: boolean
   // KPI specific
   prefix?: string
   suffix?: string

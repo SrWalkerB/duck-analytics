@@ -58,8 +58,19 @@ export class DataSourcesController {
   }
 
   @Post(':id/test')
-  testConnection(@Param('id') id: string, @CurrentUser() userId: string) {
-    return this.service.testConnection(id, userId);
+  testConnection(
+    @Param('id') id: string,
+    @CurrentUser() userId: string,
+    @Body() dto: object,
+  ) {
+    const { connectionString, database } = dto as {
+      connectionString?: string;
+      database?: string;
+    };
+    return this.service.testConnection(id, userId, {
+      connectionString,
+      database,
+    });
   }
 
   @Get(':id/collections')

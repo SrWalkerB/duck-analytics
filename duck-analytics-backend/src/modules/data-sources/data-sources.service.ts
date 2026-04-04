@@ -61,9 +61,21 @@ export class DataSourcesService {
     });
   }
 
-  async testConnection(id: string, userId: string) {
+  async testConnection(
+    id: string,
+    userId: string,
+    overrides?: { connectionString?: string; database?: string },
+  ) {
     const ds = await this.findOne(id, userId);
-    await this.mongodb.testConnection(ds.connectionString, ds.database);
+    const connectionString = overrides?.connectionString?.trim();
+    const database = overrides?.database?.trim() || ds.database;
+
+    if (connectionString) {
+      await this.mongodb.testRawConnection(connectionString, database);
+      return { ok: true };
+    }
+
+    await this.mongodb.testConnection(ds.connectionString, database);
     return { ok: true };
   }
 

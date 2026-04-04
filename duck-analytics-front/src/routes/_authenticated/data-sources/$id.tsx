@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { api } from '@/services/api'
 import type { DataSource } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -17,29 +17,39 @@ function EditDataSourcePage() {
   const { id } = Route.useParams()
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const [name, setName] = useState('')
-  const [database, setDatabase] = useState('')
+  const [name, setName] = useState<string | null>(null)
+  const [connectionString, setConnectionString] = useState('')
+  const [database, setDatabase] = useState<string | null>(null)
 
   const { data: ds } = useQuery<DataSource>({
     queryKey: ['data-source', id],
     queryFn: () => api.get(`/v1/data-sources/${id}`).then((r) => r.data),
   })
 
-  useEffect(() => {
-    if (ds) { setName(ds.name); setDatabase(ds.database) }
-  }, [ds])
+  const currentName = name ?? ds?.name ?? ''
+  const currentDatabase = database ?? ds?.database ?? ''
 
   const updateMutation = useMutation({
-    mutationFn: () => api.put(`/v1/data-sources/${id}`, { name, database }),
+    mutationFn: () =>
+      api.put(`/v1/data-sources/${id}`, {
+        name: currentName,
+        database: currentDatabase,
+        ...(connectionString.trim() && { connectionString: connectionString.trim() }),
+      }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['data-sources'] })
       toast.success('Updated')
       navigate({ to: '/data-sources' })
     },
+    onError: () => toast.error('Failed to update'),
   })
 
   const testMutation = useMutation({
-    mutationFn: () => api.post(`/v1/data-sources/${id}/test`),
+    mutationFn: () =>
+      api.post(`/v1/data-sources/${id}/test`, {
+        connectionString: connectionString.trim() || undefined,
+        database: currentDatabase,
+      }),
     onSuccess: () => toast.success('Connection successful'),
     onError: () => toast.error('Connection failed'),
   })
@@ -56,16 +66,31 @@ function EditDataSourcePage() {
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate() }} className="space-y-4">
             <div className="space-y-2">
               <Label>Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} required />
+              <Input value={currentName} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Connection String</Label>
+              <Input
+                value={connectionString}
+                onChange={(e) => setConnectionString(e.target.value)}
+                placeholder="Leave blank to keep current connection"
+              />
             </div>
             <div className="space-y-2">
               <Label>Database</Label>
-              <Input value={database} onChange={(e) => setDatabase(e.target.value)} required />
+              <Input value={currentDatabase} onChange={(e) => setDatabase(e.target.value)} required />
             </div>
             <div className="flex gap-2">
-              <Button type="submit" disabled={updateMutation.isPending}>Save</Button>
-              <Button type="button" variant="outline" onClick={() => testMutation.mutate()}>
-                Test Connection
+              <Button type="submit" disabled={updateMutation.isPending || !currentName || !currentDatabase}>
+                {updateMutation.isPending ? 'Saving...' : 'Save'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={testMutation.isPending || !currentDatabase || (!connectionString.trim() && !ds)}
+                onClick={() => testMutation.mutate()}
+              >
+                {testMutation.isPending ? 'Testing...' : 'Test Connection'}
               </Button>
               <Button type="button" variant="outline" onClick={() => navigate({ to: '/data-sources' })}>
                 Cancel

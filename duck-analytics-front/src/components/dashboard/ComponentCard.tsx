@@ -180,7 +180,10 @@ export function ComponentCard({
         </div>
       )}
 
-      <Card className="h-full overflow-hidden" style={{ backgroundColor: dc.backgroundColor ?? undefined }}>
+      <Card
+        className="h-full gap-0 overflow-hidden py-0"
+        style={{ backgroundColor: dc.backgroundColor ?? undefined }}
+      >
         {!isTitleHidden && (
           <div className="flex h-8 items-center border-b px-3">
             <span className="truncate text-xs font-medium">{displayTitle}</span>

@@ -3,6 +3,7 @@ import { PrismaService } from '../../lib/prisma/prisma.service';
 import { MongoDBService } from '../../lib/mongodb/mongodb.service';
 import { DataSourcesService } from '../data-sources/data-sources.service';
 import { QueriesService } from '../queries/queries.service';
+import type { QueryFilter } from '../queries/query-builder.service';
 import type { CreateFilterDto } from './dto/create-filter.dto';
 import type { UpdateFilterDto } from './dto/update-filter.dto';
 
@@ -86,6 +87,62 @@ export class FiltersService {
     return this.prisma.dashboardFilter.delete({ where: { id } });
   }
 
+  private parseParentValue(parentValue?: unknown): unknown {
+    if (parentValue === undefined) return undefined;
+    if (typeof parentValue === 'string' && parentValue.includes(',')) {
+      return parentValue.split(',');
+    }
+    return parentValue;
+  }
+
+  private async resolveRelationshipConstraints(
+    filterId: string,
+    userId: string,
+    activeFilters?: Record<string, unknown[]>,
+    relationships?: {
+      id: string;
+      sourceFilterId: string;
+      targetFilterId: string;
+      sourceField: string;
+      targetField: string;
+    }[],
+  ): Promise<{ targetField: string; values: unknown[] }[]> {
+    const constraints: { targetField: string; values: unknown[] }[] = [];
+    if (!relationships?.length || !activeFilters) return constraints;
+
+    for (const rel of relationships) {
+      if (rel.targetFilterId !== filterId) continue;
+      const sourceValues = activeFilters[rel.sourceFilterId];
+      if (!sourceValues || sourceValues.length === 0) continue;
+
+      const sourceFilter = await this.findOne(rel.sourceFilterId);
+      let matchValues: unknown[] = sourceValues;
+
+      if (rel.sourceField !== sourceFilter.field) {
+        const sourceDs = await this.dataSources.findOne(
+          sourceFilter.dataSourceId,
+          userId,
+        );
+        const sourceDb = await this.mongodb.getDb(
+          sourceDs.connectionString,
+          sourceDs.database,
+        );
+        const translated = await sourceDb
+          .collection(sourceFilter.collection)
+          .aggregate([
+            { $match: { [sourceFilter.field]: { $in: sourceValues } } },
+            { $group: { _id: `$${rel.sourceField}` } },
+          ])
+          .toArray();
+        matchValues = translated.map((r) => r._id).filter((v) => v != null);
+      }
+
+      constraints.push({ targetField: rel.targetField, values: matchValues });
+    }
+
+    return constraints;
+  }
+
   async getValues(
     filterId: string,
     userId: string,
@@ -103,12 +160,41 @@ export class FiltersService {
     }[],
   ) {
     const filter = await this.findOne(filterId);
-
     const fieldName = filter.field;
+    const parsedParentValue = this.parseParentValue(parentValue);
+    const relationshipConstraints = await this.resolveRelationshipConstraints(
+      filterId,
+      userId,
+      activeFilters,
+      relationships,
+    );
 
     // Query-based filter: execute the saved query and extract distinct values from the field column
     if (filter.queryId) {
-      const result = await this.queries.execute(filter.queryId, userId);
+      const injectedFilters: QueryFilter[] = [];
+
+      if (parsedParentValue !== undefined && filter.parentFilterId) {
+        const parent = await this.findOne(filter.parentFilterId);
+        injectedFilters.push({
+          field: parent.field,
+          operator: Array.isArray(parsedParentValue) ? 'in' : 'eq',
+          value: parsedParentValue,
+        });
+      }
+
+      for (const constraint of relationshipConstraints) {
+        injectedFilters.push({
+          field: constraint.targetField,
+          operator: 'in',
+          value: constraint.values,
+        });
+      }
+
+      const result = await this.queries.execute(
+        filter.queryId,
+        userId,
+        injectedFilters.length > 0 ? injectedFilters : undefined,
+      );
       const seen = new Set<string>();
       let items: { label: string; value: unknown }[] = [];
       for (const row of result.data) {
@@ -128,93 +214,58 @@ export class FiltersService {
       items.sort((a, b) => a.label.localeCompare(b.label));
 
       const skip = (page - 1) * pageSize;
+      const total = items.length;
       return {
         items: items.slice(skip, skip + pageSize),
         page,
         pageSize,
+        total,
       };
     }
 
     // Simple mode: distinct aggregation on the collection
     const ds = await this.dataSources.findOne(filter.dataSourceId, userId);
     const db = await this.mongodb.getDb(ds.connectionString, ds.database);
-    const pipeline: object[] = [];
+    const matchPipeline: object[] = [];
 
-    if (parentValue !== undefined && filter.parentFilterId) {
+    if (parsedParentValue !== undefined && filter.parentFilterId) {
       const parent = await this.findOne(filter.parentFilterId);
-      const values =
-        typeof parentValue === 'string' && parentValue.includes(',')
-          ? parentValue.split(',')
-          : parentValue;
-      pipeline.push({
+      matchPipeline.push({
         $match: {
-          [parent.field]: Array.isArray(values) ? { $in: values } : values,
+          [parent.field]: Array.isArray(parsedParentValue)
+            ? { $in: parsedParentValue }
+            : parsedParentValue,
         },
       });
     }
 
     // Apply relationship constraints: filter values based on active selections in related filters
-    if (relationships?.length && activeFilters) {
-      console.log('[getValues] Relationship constraints:', JSON.stringify({ filterId, relationships: relationships.length, activeFilters }));
-      for (const rel of relationships) {
-        if (rel.targetFilterId !== filterId) continue;
-        const sourceValues = activeFilters[rel.sourceFilterId];
-        if (!sourceValues || sourceValues.length === 0) continue;
-
-        // Translate source filter's selected values (field/label values) to sourceField values
-        // e.g. selected category names → category _id values
-        const sourceFilter = await this.findOne(rel.sourceFilterId);
-        let matchValues: unknown[] = sourceValues;
-
-        console.log('[getValues] Rel constraint:', JSON.stringify({
-          sourceField: rel.sourceField,
-          targetField: rel.targetField,
-          sourceFilterField: sourceFilter.field,
-          sourceValues,
-          needsTranslation: rel.sourceField !== sourceFilter.field,
-        }));
-
-        if (rel.sourceField !== sourceFilter.field) {
-          const sourceDs = await this.dataSources.findOne(
-            sourceFilter.dataSourceId,
-            userId,
-          );
-          const sourceDb = await this.mongodb.getDb(
-            sourceDs.connectionString,
-            sourceDs.database,
-          );
-          const translated = await sourceDb
-            .collection(sourceFilter.collection)
-            .aggregate([
-              { $match: { [sourceFilter.field]: { $in: sourceValues } } },
-              { $group: { _id: `$${rel.sourceField}` } },
-            ])
-            .toArray();
-          matchValues = translated
-            .map((r) => r._id)
-            .filter((v) => v != null);
-          console.log('[getValues] Translated values:', matchValues);
-        }
-
-        pipeline.push({
-          $match: {
-            [rel.targetField]: { $in: matchValues },
-          },
-        });
-      }
-      console.log('[getValues] Final pipeline:', JSON.stringify(pipeline));
+    for (const constraint of relationshipConstraints) {
+      matchPipeline.push({
+        $match: {
+          [constraint.targetField]: { $in: constraint.values },
+        },
+      });
     }
 
     if (search) {
-      pipeline.push({
+      matchPipeline.push({
         $match: { [fieldName]: { $regex: search, $options: 'i' } },
       });
     }
 
     const skip = (page - 1) * pageSize;
+    const valueGrouping = { $group: { _id: `$${fieldName}` } };
 
-    pipeline.push(
-      { $group: { _id: `$${fieldName}` } },
+    const countResult = await db
+      .collection(filter.collection)
+      .aggregate([...matchPipeline, valueGrouping, { $count: 'total' }])
+      .toArray();
+    const total = countResult[0]?.total ?? 0;
+
+    const pagePipeline = [...matchPipeline];
+    pagePipeline.push(
+      valueGrouping,
       { $sort: { _id: 1 } },
       { $skip: skip },
       { $limit: pageSize },
@@ -222,7 +273,7 @@ export class FiltersService {
 
     const results = await db
       .collection(filter.collection)
-      .aggregate(pipeline)
+      .aggregate(pagePipeline)
       .toArray();
     return {
       items: results
@@ -230,6 +281,7 @@ export class FiltersService {
         .map((r) => ({ label: String(r._id), value: r._id })),
       page,
       pageSize,
+      total,
     };
   }
 }

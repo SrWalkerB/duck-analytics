@@ -331,6 +331,17 @@ export function ChartOptionsPanel({ type, data, xField, config, onChange }: Prop
                   onCheckedChange={(v) => update({ innerRadius: v ? 60 : 0 })}
                 />
               </div>
+
+              <div className="flex items-center justify-between">
+                <Label htmlFor="pie-legend-with-value" className="cursor-pointer text-xs">
+                  Valor da fatia na legenda
+                </Label>
+                <Switch
+                  id="pie-legend-with-value"
+                  checked={config.appendPieLabelToLegend === true}
+                  onCheckedChange={(v) => update({ appendPieLabelToLegend: v })}
+                />
+              </div>
             </>
           )}
         </Section>

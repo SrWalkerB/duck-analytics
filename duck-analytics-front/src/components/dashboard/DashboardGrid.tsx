@@ -255,7 +255,7 @@ export function DashboardGrid({
           <GridLayout
             layout={layout}
             width={width}
-            gridConfig={{ cols: 12, rowHeight: 60 }}
+            gridConfig={{ cols: 12, rowHeight: 60, containerPadding: [0, 0] }}
             dragConfig={{ enabled: isEditMode, handle: '.drag-handle' }}
             resizeConfig={{ enabled: isEditMode }}
             onLayoutChange={handleLayoutChange}
