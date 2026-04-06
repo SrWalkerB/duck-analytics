@@ -18,10 +18,17 @@ interface Props {
   open: boolean
   onClose: () => void
   components: Component[]
+  usageCountByComponentId: Record<string, number>
   onAdd: (component: Component) => void
 }
 
-export function AddQuestionPanel({ open, onClose, components, onAdd }: Props) {
+export function AddQuestionPanel({
+  open,
+  onClose,
+  components,
+  usageCountByComponentId,
+  onAdd,
+}: Props) {
   const [search, setSearch] = useState('')
 
   const filtered = components.filter((c) =>
@@ -32,7 +39,7 @@ export function AddQuestionPanel({ open, onClose, components, onAdd }: Props) {
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="right" className="w-80 p-0" aria-describedby={undefined}>
         <SheetHeader className="border-b px-4 py-3">
-          <SheetTitle className="text-sm">Adicionar questão</SheetTitle>
+          <SheetTitle className="text-sm">Adicionar componente</SheetTitle>
         </SheetHeader>
         <div className="p-3">
           <div className="relative">
@@ -47,7 +54,7 @@ export function AddQuestionPanel({ open, onClose, components, onAdd }: Props) {
         </div>
         <div className="overflow-y-auto px-3 pb-3" style={{ maxHeight: 'calc(100vh - 130px)' }}>
           {filtered.length === 0 && (
-            <p className="py-4 text-center text-xs text-muted-foreground">Nenhuma questão encontrada.</p>
+            <p className="py-4 text-center text-xs text-muted-foreground">Nenhum componente encontrado.</p>
           )}
           {filtered.map((c) => (
             <div
@@ -56,9 +63,14 @@ export function AddQuestionPanel({ open, onClose, components, onAdd }: Props) {
             >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{c.name}</p>
-                <Badge variant="secondary" className="mt-0.5 text-xs">
-                  {TYPE_LABELS[c.type] ?? c.type}
-                </Badge>
+                <div className="mt-0.5 flex items-center gap-1.5">
+                  <Badge variant="secondary" className="text-xs">
+                    {TYPE_LABELS[c.type] ?? c.type}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {usageCountByComponentId[c.id] ?? 0} no dashboard
+                  </span>
+                </div>
               </div>
               <Button
                 size="icon"

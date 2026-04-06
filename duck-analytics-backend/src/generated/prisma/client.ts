@@ -75,6 +75,16 @@ export type Component = Prisma.ComponentModel
  */
 export type Dashboard = Prisma.DashboardModel
 /**
+ * Model DashboardEmbed
+ * 
+ */
+export type DashboardEmbed = Prisma.DashboardEmbedModel
+/**
+ * Model SystemLog
+ * 
+ */
+export type SystemLog = Prisma.SystemLogModel
+/**
  * Model DashboardComponent
  * 
  */

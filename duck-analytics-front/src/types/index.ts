@@ -18,6 +18,9 @@ export interface DataSource {
 
 export type ComponentType = 'TABLE' | 'BAR_CHART' | 'LINE_CHART' | 'PIE_CHART' | 'KPI'
 export type FilterType = 'SELECT' | 'MULTI_SELECT' | 'DATE_RANGE' | 'TEXT'
+export type DashboardStatus = 'DRAFT' | 'PUBLISHED'
+export type EmbedType = 'PUBLIC' | 'JWT_SECURED'
+export type LogLevel = 'INFO' | 'WARN' | 'ERROR'
 
 export interface Query {
   id: string
@@ -170,6 +173,7 @@ export interface Component {
   queryId: string
   configuration: Record<string, unknown>
   userId: string
+  folderId: string | null
   createdAt: string
   updatedAt: string
   query?: { id: string; collection: string; dataSourceId: string }
@@ -216,17 +220,41 @@ export interface DashboardFilter {
   queryId: string | null
 }
 
+export interface DashboardEmbed {
+  id: string
+  embedCode: string
+  embedType: EmbedType
+  showFilters: boolean
+  showTitle: boolean
+  createdAt: string
+  updatedAt: string
+}
+
 export interface Dashboard {
   id: string
   name: string
   description: string | null
   configuration: Record<string, unknown>
+  status: DashboardStatus
   userId: string
   folderId: string | null
   createdAt: string
   updatedAt: string
   dashboardComponents: DashboardComponent[]
   dashboardFilters: DashboardFilter[]
+  embed?: DashboardEmbed | null
+}
+
+export interface SystemLog {
+  id: string
+  userId: string
+  level: LogLevel
+  source: string
+  event: string
+  resourceId: string | null
+  message: string
+  metadata: Record<string, unknown> | null
+  createdAt: string
 }
 
 export interface FieldSchema {
@@ -253,7 +281,30 @@ export interface Folder {
   id: string
   name: string
   parentId: string | null
+  updatedAt: string
   children: Folder[]
+}
+
+export interface CollectionItem {
+  id: string
+  name: string
+  type: 'folder' | 'dashboard' | 'component'
+  itemType?: ComponentType
+  updatedAt: string
+  folderId: string | null
+}
+
+export interface CollectionContents {
+  folder: Folder | null
+  breadcrumbs: { id: string; name: string }[]
+  items: CollectionItem[]
+}
+
+export interface FolderTreeNode {
+  id: string
+  name: string
+  parentId: string | null
+  children: FolderTreeNode[]
 }
 
 export interface AIConfig {

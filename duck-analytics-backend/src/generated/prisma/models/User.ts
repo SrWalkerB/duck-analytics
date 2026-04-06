@@ -204,6 +204,7 @@ export type UserWhereInput = {
   dashboards?: Prisma.DashboardListRelationFilter
   folders?: Prisma.FolderListRelationFilter
   aiConfig?: Prisma.XOR<Prisma.AIConfigNullableScalarRelationFilter, Prisma.AIConfigWhereInput> | null
+  systemLogs?: Prisma.SystemLogListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -220,6 +221,7 @@ export type UserOrderByWithRelationInput = {
   dashboards?: Prisma.DashboardOrderByRelationAggregateInput
   folders?: Prisma.FolderOrderByRelationAggregateInput
   aiConfig?: Prisma.AIConfigOrderByWithRelationInput
+  systemLogs?: Prisma.SystemLogOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -239,6 +241,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   dashboards?: Prisma.DashboardListRelationFilter
   folders?: Prisma.FolderListRelationFilter
   aiConfig?: Prisma.XOR<Prisma.AIConfigNullableScalarRelationFilter, Prisma.AIConfigWhereInput> | null
+  systemLogs?: Prisma.SystemLogListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -281,6 +284,7 @@ export type UserCreateInput = {
   dashboards?: Prisma.DashboardCreateNestedManyWithoutUserInput
   folders?: Prisma.FolderCreateNestedManyWithoutUserInput
   aiConfig?: Prisma.AIConfigCreateNestedOneWithoutUserInput
+  systemLogs?: Prisma.SystemLogCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -297,6 +301,7 @@ export type UserUncheckedCreateInput = {
   dashboards?: Prisma.DashboardUncheckedCreateNestedManyWithoutUserInput
   folders?: Prisma.FolderUncheckedCreateNestedManyWithoutUserInput
   aiConfig?: Prisma.AIConfigUncheckedCreateNestedOneWithoutUserInput
+  systemLogs?: Prisma.SystemLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -313,6 +318,7 @@ export type UserUpdateInput = {
   dashboards?: Prisma.DashboardUpdateManyWithoutUserNestedInput
   folders?: Prisma.FolderUpdateManyWithoutUserNestedInput
   aiConfig?: Prisma.AIConfigUpdateOneWithoutUserNestedInput
+  systemLogs?: Prisma.SystemLogUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -329,6 +335,7 @@ export type UserUncheckedUpdateInput = {
   dashboards?: Prisma.DashboardUncheckedUpdateManyWithoutUserNestedInput
   folders?: Prisma.FolderUncheckedUpdateManyWithoutUserNestedInput
   aiConfig?: Prisma.AIConfigUncheckedUpdateOneWithoutUserNestedInput
+  systemLogs?: Prisma.SystemLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -492,6 +499,20 @@ export type UserUpdateOneRequiredWithoutDashboardsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutDashboardsInput, Prisma.UserUpdateWithoutDashboardsInput>, Prisma.UserUncheckedUpdateWithoutDashboardsInput>
 }
 
+export type UserCreateNestedOneWithoutSystemLogsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSystemLogsInput, Prisma.UserUncheckedCreateWithoutSystemLogsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSystemLogsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutSystemLogsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSystemLogsInput, Prisma.UserUncheckedCreateWithoutSystemLogsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSystemLogsInput
+  upsert?: Prisma.UserUpsertWithoutSystemLogsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSystemLogsInput, Prisma.UserUpdateWithoutSystemLogsInput>, Prisma.UserUncheckedUpdateWithoutSystemLogsInput>
+}
+
 export type UserCreateWithoutAiConfigInput = {
   id?: string
   email: string
@@ -505,6 +526,7 @@ export type UserCreateWithoutAiConfigInput = {
   components?: Prisma.ComponentCreateNestedManyWithoutUserInput
   dashboards?: Prisma.DashboardCreateNestedManyWithoutUserInput
   folders?: Prisma.FolderCreateNestedManyWithoutUserInput
+  systemLogs?: Prisma.SystemLogCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAiConfigInput = {
@@ -520,6 +542,7 @@ export type UserUncheckedCreateWithoutAiConfigInput = {
   components?: Prisma.ComponentUncheckedCreateNestedManyWithoutUserInput
   dashboards?: Prisma.DashboardUncheckedCreateNestedManyWithoutUserInput
   folders?: Prisma.FolderUncheckedCreateNestedManyWithoutUserInput
+  systemLogs?: Prisma.SystemLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAiConfigInput = {
@@ -551,6 +574,7 @@ export type UserUpdateWithoutAiConfigInput = {
   components?: Prisma.ComponentUpdateManyWithoutUserNestedInput
   dashboards?: Prisma.DashboardUpdateManyWithoutUserNestedInput
   folders?: Prisma.FolderUpdateManyWithoutUserNestedInput
+  systemLogs?: Prisma.SystemLogUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAiConfigInput = {
@@ -566,6 +590,7 @@ export type UserUncheckedUpdateWithoutAiConfigInput = {
   components?: Prisma.ComponentUncheckedUpdateManyWithoutUserNestedInput
   dashboards?: Prisma.DashboardUncheckedUpdateManyWithoutUserNestedInput
   folders?: Prisma.FolderUncheckedUpdateManyWithoutUserNestedInput
+  systemLogs?: Prisma.SystemLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutFoldersInput = {
@@ -581,6 +606,7 @@ export type UserCreateWithoutFoldersInput = {
   components?: Prisma.ComponentCreateNestedManyWithoutUserInput
   dashboards?: Prisma.DashboardCreateNestedManyWithoutUserInput
   aiConfig?: Prisma.AIConfigCreateNestedOneWithoutUserInput
+  systemLogs?: Prisma.SystemLogCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutFoldersInput = {
@@ -596,6 +622,7 @@ export type UserUncheckedCreateWithoutFoldersInput = {
   components?: Prisma.ComponentUncheckedCreateNestedManyWithoutUserInput
   dashboards?: Prisma.DashboardUncheckedCreateNestedManyWithoutUserInput
   aiConfig?: Prisma.AIConfigUncheckedCreateNestedOneWithoutUserInput
+  systemLogs?: Prisma.SystemLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutFoldersInput = {
@@ -627,6 +654,7 @@ export type UserUpdateWithoutFoldersInput = {
   components?: Prisma.ComponentUpdateManyWithoutUserNestedInput
   dashboards?: Prisma.DashboardUpdateManyWithoutUserNestedInput
   aiConfig?: Prisma.AIConfigUpdateOneWithoutUserNestedInput
+  systemLogs?: Prisma.SystemLogUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutFoldersInput = {
@@ -642,6 +670,7 @@ export type UserUncheckedUpdateWithoutFoldersInput = {
   components?: Prisma.ComponentUncheckedUpdateManyWithoutUserNestedInput
   dashboards?: Prisma.DashboardUncheckedUpdateManyWithoutUserNestedInput
   aiConfig?: Prisma.AIConfigUncheckedUpdateOneWithoutUserNestedInput
+  systemLogs?: Prisma.SystemLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutDataSourcesInput = {
@@ -657,6 +686,7 @@ export type UserCreateWithoutDataSourcesInput = {
   dashboards?: Prisma.DashboardCreateNestedManyWithoutUserInput
   folders?: Prisma.FolderCreateNestedManyWithoutUserInput
   aiConfig?: Prisma.AIConfigCreateNestedOneWithoutUserInput
+  systemLogs?: Prisma.SystemLogCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutDataSourcesInput = {
@@ -672,6 +702,7 @@ export type UserUncheckedCreateWithoutDataSourcesInput = {
   dashboards?: Prisma.DashboardUncheckedCreateNestedManyWithoutUserInput
   folders?: Prisma.FolderUncheckedCreateNestedManyWithoutUserInput
   aiConfig?: Prisma.AIConfigUncheckedCreateNestedOneWithoutUserInput
+  systemLogs?: Prisma.SystemLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutDataSourcesInput = {
@@ -703,6 +734,7 @@ export type UserUpdateWithoutDataSourcesInput = {
   dashboards?: Prisma.DashboardUpdateManyWithoutUserNestedInput
   folders?: Prisma.FolderUpdateManyWithoutUserNestedInput
   aiConfig?: Prisma.AIConfigUpdateOneWithoutUserNestedInput
+  systemLogs?: Prisma.SystemLogUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDataSourcesInput = {
@@ -718,6 +750,7 @@ export type UserUncheckedUpdateWithoutDataSourcesInput = {
   dashboards?: Prisma.DashboardUncheckedUpdateManyWithoutUserNestedInput
   folders?: Prisma.FolderUncheckedUpdateManyWithoutUserNestedInput
   aiConfig?: Prisma.AIConfigUncheckedUpdateOneWithoutUserNestedInput
+  systemLogs?: Prisma.SystemLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutQueriesInput = {
@@ -733,6 +766,7 @@ export type UserCreateWithoutQueriesInput = {
   dashboards?: Prisma.DashboardCreateNestedManyWithoutUserInput
   folders?: Prisma.FolderCreateNestedManyWithoutUserInput
   aiConfig?: Prisma.AIConfigCreateNestedOneWithoutUserInput
+  systemLogs?: Prisma.SystemLogCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutQueriesInput = {
@@ -748,6 +782,7 @@ export type UserUncheckedCreateWithoutQueriesInput = {
   dashboards?: Prisma.DashboardUncheckedCreateNestedManyWithoutUserInput
   folders?: Prisma.FolderUncheckedCreateNestedManyWithoutUserInput
   aiConfig?: Prisma.AIConfigUncheckedCreateNestedOneWithoutUserInput
+  systemLogs?: Prisma.SystemLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutQueriesInput = {
@@ -779,6 +814,7 @@ export type UserUpdateWithoutQueriesInput = {
   dashboards?: Prisma.DashboardUpdateManyWithoutUserNestedInput
   folders?: Prisma.FolderUpdateManyWithoutUserNestedInput
   aiConfig?: Prisma.AIConfigUpdateOneWithoutUserNestedInput
+  systemLogs?: Prisma.SystemLogUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutQueriesInput = {
@@ -794,6 +830,7 @@ export type UserUncheckedUpdateWithoutQueriesInput = {
   dashboards?: Prisma.DashboardUncheckedUpdateManyWithoutUserNestedInput
   folders?: Prisma.FolderUncheckedUpdateManyWithoutUserNestedInput
   aiConfig?: Prisma.AIConfigUncheckedUpdateOneWithoutUserNestedInput
+  systemLogs?: Prisma.SystemLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutComponentsInput = {
@@ -809,6 +846,7 @@ export type UserCreateWithoutComponentsInput = {
   dashboards?: Prisma.DashboardCreateNestedManyWithoutUserInput
   folders?: Prisma.FolderCreateNestedManyWithoutUserInput
   aiConfig?: Prisma.AIConfigCreateNestedOneWithoutUserInput
+  systemLogs?: Prisma.SystemLogCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutComponentsInput = {
@@ -824,6 +862,7 @@ export type UserUncheckedCreateWithoutComponentsInput = {
   dashboards?: Prisma.DashboardUncheckedCreateNestedManyWithoutUserInput
   folders?: Prisma.FolderUncheckedCreateNestedManyWithoutUserInput
   aiConfig?: Prisma.AIConfigUncheckedCreateNestedOneWithoutUserInput
+  systemLogs?: Prisma.SystemLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutComponentsInput = {
@@ -855,6 +894,7 @@ export type UserUpdateWithoutComponentsInput = {
   dashboards?: Prisma.DashboardUpdateManyWithoutUserNestedInput
   folders?: Prisma.FolderUpdateManyWithoutUserNestedInput
   aiConfig?: Prisma.AIConfigUpdateOneWithoutUserNestedInput
+  systemLogs?: Prisma.SystemLogUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutComponentsInput = {
@@ -870,6 +910,7 @@ export type UserUncheckedUpdateWithoutComponentsInput = {
   dashboards?: Prisma.DashboardUncheckedUpdateManyWithoutUserNestedInput
   folders?: Prisma.FolderUncheckedUpdateManyWithoutUserNestedInput
   aiConfig?: Prisma.AIConfigUncheckedUpdateOneWithoutUserNestedInput
+  systemLogs?: Prisma.SystemLogUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutDashboardsInput = {
@@ -885,6 +926,7 @@ export type UserCreateWithoutDashboardsInput = {
   components?: Prisma.ComponentCreateNestedManyWithoutUserInput
   folders?: Prisma.FolderCreateNestedManyWithoutUserInput
   aiConfig?: Prisma.AIConfigCreateNestedOneWithoutUserInput
+  systemLogs?: Prisma.SystemLogCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutDashboardsInput = {
@@ -900,6 +942,7 @@ export type UserUncheckedCreateWithoutDashboardsInput = {
   components?: Prisma.ComponentUncheckedCreateNestedManyWithoutUserInput
   folders?: Prisma.FolderUncheckedCreateNestedManyWithoutUserInput
   aiConfig?: Prisma.AIConfigUncheckedCreateNestedOneWithoutUserInput
+  systemLogs?: Prisma.SystemLogUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutDashboardsInput = {
@@ -931,6 +974,7 @@ export type UserUpdateWithoutDashboardsInput = {
   components?: Prisma.ComponentUpdateManyWithoutUserNestedInput
   folders?: Prisma.FolderUpdateManyWithoutUserNestedInput
   aiConfig?: Prisma.AIConfigUpdateOneWithoutUserNestedInput
+  systemLogs?: Prisma.SystemLogUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDashboardsInput = {
@@ -946,6 +990,87 @@ export type UserUncheckedUpdateWithoutDashboardsInput = {
   components?: Prisma.ComponentUncheckedUpdateManyWithoutUserNestedInput
   folders?: Prisma.FolderUncheckedUpdateManyWithoutUserNestedInput
   aiConfig?: Prisma.AIConfigUncheckedUpdateOneWithoutUserNestedInput
+  systemLogs?: Prisma.SystemLogUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutSystemLogsInput = {
+  id?: string
+  email: string
+  password: string
+  name: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  dataSources?: Prisma.DataSourceCreateNestedManyWithoutUserInput
+  queries?: Prisma.QueryCreateNestedManyWithoutUserInput
+  components?: Prisma.ComponentCreateNestedManyWithoutUserInput
+  dashboards?: Prisma.DashboardCreateNestedManyWithoutUserInput
+  folders?: Prisma.FolderCreateNestedManyWithoutUserInput
+  aiConfig?: Prisma.AIConfigCreateNestedOneWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutSystemLogsInput = {
+  id?: string
+  email: string
+  password: string
+  name: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  dataSources?: Prisma.DataSourceUncheckedCreateNestedManyWithoutUserInput
+  queries?: Prisma.QueryUncheckedCreateNestedManyWithoutUserInput
+  components?: Prisma.ComponentUncheckedCreateNestedManyWithoutUserInput
+  dashboards?: Prisma.DashboardUncheckedCreateNestedManyWithoutUserInput
+  folders?: Prisma.FolderUncheckedCreateNestedManyWithoutUserInput
+  aiConfig?: Prisma.AIConfigUncheckedCreateNestedOneWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutSystemLogsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutSystemLogsInput, Prisma.UserUncheckedCreateWithoutSystemLogsInput>
+}
+
+export type UserUpsertWithoutSystemLogsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutSystemLogsInput, Prisma.UserUncheckedUpdateWithoutSystemLogsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutSystemLogsInput, Prisma.UserUncheckedCreateWithoutSystemLogsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutSystemLogsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutSystemLogsInput, Prisma.UserUncheckedUpdateWithoutSystemLogsInput>
+}
+
+export type UserUpdateWithoutSystemLogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dataSources?: Prisma.DataSourceUpdateManyWithoutUserNestedInput
+  queries?: Prisma.QueryUpdateManyWithoutUserNestedInput
+  components?: Prisma.ComponentUpdateManyWithoutUserNestedInput
+  dashboards?: Prisma.DashboardUpdateManyWithoutUserNestedInput
+  folders?: Prisma.FolderUpdateManyWithoutUserNestedInput
+  aiConfig?: Prisma.AIConfigUpdateOneWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutSystemLogsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  password?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dataSources?: Prisma.DataSourceUncheckedUpdateManyWithoutUserNestedInput
+  queries?: Prisma.QueryUncheckedUpdateManyWithoutUserNestedInput
+  components?: Prisma.ComponentUncheckedUpdateManyWithoutUserNestedInput
+  dashboards?: Prisma.DashboardUncheckedUpdateManyWithoutUserNestedInput
+  folders?: Prisma.FolderUncheckedUpdateManyWithoutUserNestedInput
+  aiConfig?: Prisma.AIConfigUncheckedUpdateOneWithoutUserNestedInput
 }
 
 
@@ -959,6 +1084,7 @@ export type UserCountOutputType = {
   components: number
   dashboards: number
   folders: number
+  systemLogs: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -967,6 +1093,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   components?: boolean | UserCountOutputTypeCountComponentsArgs
   dashboards?: boolean | UserCountOutputTypeCountDashboardsArgs
   folders?: boolean | UserCountOutputTypeCountFoldersArgs
+  systemLogs?: boolean | UserCountOutputTypeCountSystemLogsArgs
 }
 
 /**
@@ -1014,6 +1141,13 @@ export type UserCountOutputTypeCountFoldersArgs<ExtArgs extends runtime.Types.Ex
   where?: Prisma.FolderWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountSystemLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SystemLogWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1029,6 +1163,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   dashboards?: boolean | Prisma.User$dashboardsArgs<ExtArgs>
   folders?: boolean | Prisma.User$foldersArgs<ExtArgs>
   aiConfig?: boolean | Prisma.User$aiConfigArgs<ExtArgs>
+  systemLogs?: boolean | Prisma.User$systemLogsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -1070,6 +1205,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   dashboards?: boolean | Prisma.User$dashboardsArgs<ExtArgs>
   folders?: boolean | Prisma.User$foldersArgs<ExtArgs>
   aiConfig?: boolean | Prisma.User$aiConfigArgs<ExtArgs>
+  systemLogs?: boolean | Prisma.User$systemLogsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1084,6 +1220,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     dashboards: Prisma.$DashboardPayload<ExtArgs>[]
     folders: Prisma.$FolderPayload<ExtArgs>[]
     aiConfig: Prisma.$AIConfigPayload<ExtArgs> | null
+    systemLogs: Prisma.$SystemLogPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1493,6 +1630,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   dashboards<T extends Prisma.User$dashboardsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$dashboardsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DashboardPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   folders<T extends Prisma.User$foldersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$foldersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$FolderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   aiConfig<T extends Prisma.User$aiConfigArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$aiConfigArgs<ExtArgs>>): Prisma.Prisma__AIConfigClient<runtime.Types.Result.GetResult<Prisma.$AIConfigPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  systemLogs<T extends Prisma.User$systemLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$systemLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SystemLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2058,6 +2196,30 @@ export type User$aiConfigArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    */
   include?: Prisma.AIConfigInclude<ExtArgs> | null
   where?: Prisma.AIConfigWhereInput
+}
+
+/**
+ * User.systemLogs
+ */
+export type User$systemLogsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SystemLog
+   */
+  select?: Prisma.SystemLogSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SystemLog
+   */
+  omit?: Prisma.SystemLogOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SystemLogInclude<ExtArgs> | null
+  where?: Prisma.SystemLogWhereInput
+  orderBy?: Prisma.SystemLogOrderByWithRelationInput | Prisma.SystemLogOrderByWithRelationInput[]
+  cursor?: Prisma.SystemLogWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SystemLogScalarFieldEnum | Prisma.SystemLogScalarFieldEnum[]
 }
 
 /**

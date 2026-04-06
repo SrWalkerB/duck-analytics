@@ -30,6 +30,7 @@ export type ComponentMinAggregateOutputType = {
   type: $Enums.ComponentType | null
   queryId: string | null
   userId: string | null
+  folderId: string | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -41,6 +42,7 @@ export type ComponentMaxAggregateOutputType = {
   type: $Enums.ComponentType | null
   queryId: string | null
   userId: string | null
+  folderId: string | null
   createdAt: Date | null
   updatedAt: Date | null
   deletedAt: Date | null
@@ -53,6 +55,7 @@ export type ComponentCountAggregateOutputType = {
   queryId: number
   configuration: number
   userId: number
+  folderId: number
   createdAt: number
   updatedAt: number
   deletedAt: number
@@ -66,6 +69,7 @@ export type ComponentMinAggregateInputType = {
   type?: true
   queryId?: true
   userId?: true
+  folderId?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -77,6 +81,7 @@ export type ComponentMaxAggregateInputType = {
   type?: true
   queryId?: true
   userId?: true
+  folderId?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -89,6 +94,7 @@ export type ComponentCountAggregateInputType = {
   queryId?: true
   configuration?: true
   userId?: true
+  folderId?: true
   createdAt?: true
   updatedAt?: true
   deletedAt?: true
@@ -174,6 +180,7 @@ export type ComponentGroupByOutputType = {
   queryId: string
   configuration: runtime.JsonValue
   userId: string
+  folderId: string | null
   createdAt: Date
   updatedAt: Date
   deletedAt: Date | null
@@ -207,11 +214,13 @@ export type ComponentWhereInput = {
   queryId?: Prisma.StringFilter<"Component"> | string
   configuration?: Prisma.JsonFilter<"Component">
   userId?: Prisma.StringFilter<"Component"> | string
+  folderId?: Prisma.StringNullableFilter<"Component"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Component"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Component"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Component"> | Date | string | null
   query?: Prisma.XOR<Prisma.QueryScalarRelationFilter, Prisma.QueryWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  folder?: Prisma.XOR<Prisma.FolderNullableScalarRelationFilter, Prisma.FolderWhereInput> | null
   dashboardComponents?: Prisma.DashboardComponentListRelationFilter
 }
 
@@ -222,11 +231,13 @@ export type ComponentOrderByWithRelationInput = {
   queryId?: Prisma.SortOrder
   configuration?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  folderId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   query?: Prisma.QueryOrderByWithRelationInput
   user?: Prisma.UserOrderByWithRelationInput
+  folder?: Prisma.FolderOrderByWithRelationInput
   dashboardComponents?: Prisma.DashboardComponentOrderByRelationAggregateInput
 }
 
@@ -240,11 +251,13 @@ export type ComponentWhereUniqueInput = Prisma.AtLeast<{
   queryId?: Prisma.StringFilter<"Component"> | string
   configuration?: Prisma.JsonFilter<"Component">
   userId?: Prisma.StringFilter<"Component"> | string
+  folderId?: Prisma.StringNullableFilter<"Component"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Component"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Component"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Component"> | Date | string | null
   query?: Prisma.XOR<Prisma.QueryScalarRelationFilter, Prisma.QueryWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
+  folder?: Prisma.XOR<Prisma.FolderNullableScalarRelationFilter, Prisma.FolderWhereInput> | null
   dashboardComponents?: Prisma.DashboardComponentListRelationFilter
 }, "id">
 
@@ -255,6 +268,7 @@ export type ComponentOrderByWithAggregationInput = {
   queryId?: Prisma.SortOrder
   configuration?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  folderId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -273,6 +287,7 @@ export type ComponentScalarWhereWithAggregatesInput = {
   queryId?: Prisma.StringWithAggregatesFilter<"Component"> | string
   configuration?: Prisma.JsonWithAggregatesFilter<"Component">
   userId?: Prisma.StringWithAggregatesFilter<"Component"> | string
+  folderId?: Prisma.StringNullableWithAggregatesFilter<"Component"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Component"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Component"> | Date | string
   deletedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Component"> | Date | string | null
@@ -288,6 +303,7 @@ export type ComponentCreateInput = {
   deletedAt?: Date | string | null
   query: Prisma.QueryCreateNestedOneWithoutComponentsInput
   user: Prisma.UserCreateNestedOneWithoutComponentsInput
+  folder?: Prisma.FolderCreateNestedOneWithoutComponentsInput
   dashboardComponents?: Prisma.DashboardComponentCreateNestedManyWithoutComponentInput
 }
 
@@ -298,6 +314,7 @@ export type ComponentUncheckedCreateInput = {
   queryId: string
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   userId: string
+  folderId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -314,6 +331,7 @@ export type ComponentUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   query?: Prisma.QueryUpdateOneRequiredWithoutComponentsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutComponentsNestedInput
+  folder?: Prisma.FolderUpdateOneWithoutComponentsNestedInput
   dashboardComponents?: Prisma.DashboardComponentUpdateManyWithoutComponentNestedInput
 }
 
@@ -324,6 +342,7 @@ export type ComponentUncheckedUpdateInput = {
   queryId?: Prisma.StringFieldUpdateOperationsInput | string
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -337,6 +356,7 @@ export type ComponentCreateManyInput = {
   queryId: string
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   userId: string
+  folderId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -359,6 +379,7 @@ export type ComponentUncheckedUpdateManyInput = {
   queryId?: Prisma.StringFieldUpdateOperationsInput | string
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -381,6 +402,7 @@ export type ComponentCountOrderByAggregateInput = {
   queryId?: Prisma.SortOrder
   configuration?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  folderId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -392,6 +414,7 @@ export type ComponentMaxOrderByAggregateInput = {
   type?: Prisma.SortOrder
   queryId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  folderId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -403,6 +426,7 @@ export type ComponentMinOrderByAggregateInput = {
   type?: Prisma.SortOrder
   queryId?: Prisma.SortOrder
   userId?: Prisma.SortOrder
+  folderId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   deletedAt?: Prisma.SortOrder
@@ -452,6 +476,48 @@ export type ComponentUncheckedUpdateManyWithoutUserNestedInput = {
   connect?: Prisma.ComponentWhereUniqueInput | Prisma.ComponentWhereUniqueInput[]
   update?: Prisma.ComponentUpdateWithWhereUniqueWithoutUserInput | Prisma.ComponentUpdateWithWhereUniqueWithoutUserInput[]
   updateMany?: Prisma.ComponentUpdateManyWithWhereWithoutUserInput | Prisma.ComponentUpdateManyWithWhereWithoutUserInput[]
+  deleteMany?: Prisma.ComponentScalarWhereInput | Prisma.ComponentScalarWhereInput[]
+}
+
+export type ComponentCreateNestedManyWithoutFolderInput = {
+  create?: Prisma.XOR<Prisma.ComponentCreateWithoutFolderInput, Prisma.ComponentUncheckedCreateWithoutFolderInput> | Prisma.ComponentCreateWithoutFolderInput[] | Prisma.ComponentUncheckedCreateWithoutFolderInput[]
+  connectOrCreate?: Prisma.ComponentCreateOrConnectWithoutFolderInput | Prisma.ComponentCreateOrConnectWithoutFolderInput[]
+  createMany?: Prisma.ComponentCreateManyFolderInputEnvelope
+  connect?: Prisma.ComponentWhereUniqueInput | Prisma.ComponentWhereUniqueInput[]
+}
+
+export type ComponentUncheckedCreateNestedManyWithoutFolderInput = {
+  create?: Prisma.XOR<Prisma.ComponentCreateWithoutFolderInput, Prisma.ComponentUncheckedCreateWithoutFolderInput> | Prisma.ComponentCreateWithoutFolderInput[] | Prisma.ComponentUncheckedCreateWithoutFolderInput[]
+  connectOrCreate?: Prisma.ComponentCreateOrConnectWithoutFolderInput | Prisma.ComponentCreateOrConnectWithoutFolderInput[]
+  createMany?: Prisma.ComponentCreateManyFolderInputEnvelope
+  connect?: Prisma.ComponentWhereUniqueInput | Prisma.ComponentWhereUniqueInput[]
+}
+
+export type ComponentUpdateManyWithoutFolderNestedInput = {
+  create?: Prisma.XOR<Prisma.ComponentCreateWithoutFolderInput, Prisma.ComponentUncheckedCreateWithoutFolderInput> | Prisma.ComponentCreateWithoutFolderInput[] | Prisma.ComponentUncheckedCreateWithoutFolderInput[]
+  connectOrCreate?: Prisma.ComponentCreateOrConnectWithoutFolderInput | Prisma.ComponentCreateOrConnectWithoutFolderInput[]
+  upsert?: Prisma.ComponentUpsertWithWhereUniqueWithoutFolderInput | Prisma.ComponentUpsertWithWhereUniqueWithoutFolderInput[]
+  createMany?: Prisma.ComponentCreateManyFolderInputEnvelope
+  set?: Prisma.ComponentWhereUniqueInput | Prisma.ComponentWhereUniqueInput[]
+  disconnect?: Prisma.ComponentWhereUniqueInput | Prisma.ComponentWhereUniqueInput[]
+  delete?: Prisma.ComponentWhereUniqueInput | Prisma.ComponentWhereUniqueInput[]
+  connect?: Prisma.ComponentWhereUniqueInput | Prisma.ComponentWhereUniqueInput[]
+  update?: Prisma.ComponentUpdateWithWhereUniqueWithoutFolderInput | Prisma.ComponentUpdateWithWhereUniqueWithoutFolderInput[]
+  updateMany?: Prisma.ComponentUpdateManyWithWhereWithoutFolderInput | Prisma.ComponentUpdateManyWithWhereWithoutFolderInput[]
+  deleteMany?: Prisma.ComponentScalarWhereInput | Prisma.ComponentScalarWhereInput[]
+}
+
+export type ComponentUncheckedUpdateManyWithoutFolderNestedInput = {
+  create?: Prisma.XOR<Prisma.ComponentCreateWithoutFolderInput, Prisma.ComponentUncheckedCreateWithoutFolderInput> | Prisma.ComponentCreateWithoutFolderInput[] | Prisma.ComponentUncheckedCreateWithoutFolderInput[]
+  connectOrCreate?: Prisma.ComponentCreateOrConnectWithoutFolderInput | Prisma.ComponentCreateOrConnectWithoutFolderInput[]
+  upsert?: Prisma.ComponentUpsertWithWhereUniqueWithoutFolderInput | Prisma.ComponentUpsertWithWhereUniqueWithoutFolderInput[]
+  createMany?: Prisma.ComponentCreateManyFolderInputEnvelope
+  set?: Prisma.ComponentWhereUniqueInput | Prisma.ComponentWhereUniqueInput[]
+  disconnect?: Prisma.ComponentWhereUniqueInput | Prisma.ComponentWhereUniqueInput[]
+  delete?: Prisma.ComponentWhereUniqueInput | Prisma.ComponentWhereUniqueInput[]
+  connect?: Prisma.ComponentWhereUniqueInput | Prisma.ComponentWhereUniqueInput[]
+  update?: Prisma.ComponentUpdateWithWhereUniqueWithoutFolderInput | Prisma.ComponentUpdateWithWhereUniqueWithoutFolderInput[]
+  updateMany?: Prisma.ComponentUpdateManyWithWhereWithoutFolderInput | Prisma.ComponentUpdateManyWithWhereWithoutFolderInput[]
   deleteMany?: Prisma.ComponentScalarWhereInput | Prisma.ComponentScalarWhereInput[]
 }
 
@@ -524,6 +590,7 @@ export type ComponentCreateWithoutUserInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   query: Prisma.QueryCreateNestedOneWithoutComponentsInput
+  folder?: Prisma.FolderCreateNestedOneWithoutComponentsInput
   dashboardComponents?: Prisma.DashboardComponentCreateNestedManyWithoutComponentInput
 }
 
@@ -533,6 +600,7 @@ export type ComponentUncheckedCreateWithoutUserInput = {
   type?: $Enums.ComponentType
   queryId: string
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  folderId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -575,9 +643,62 @@ export type ComponentScalarWhereInput = {
   queryId?: Prisma.StringFilter<"Component"> | string
   configuration?: Prisma.JsonFilter<"Component">
   userId?: Prisma.StringFilter<"Component"> | string
+  folderId?: Prisma.StringNullableFilter<"Component"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Component"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Component"> | Date | string
   deletedAt?: Prisma.DateTimeNullableFilter<"Component"> | Date | string | null
+}
+
+export type ComponentCreateWithoutFolderInput = {
+  id?: string
+  name: string
+  type?: $Enums.ComponentType
+  configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  query: Prisma.QueryCreateNestedOneWithoutComponentsInput
+  user: Prisma.UserCreateNestedOneWithoutComponentsInput
+  dashboardComponents?: Prisma.DashboardComponentCreateNestedManyWithoutComponentInput
+}
+
+export type ComponentUncheckedCreateWithoutFolderInput = {
+  id?: string
+  name: string
+  type?: $Enums.ComponentType
+  queryId: string
+  configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  userId: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  dashboardComponents?: Prisma.DashboardComponentUncheckedCreateNestedManyWithoutComponentInput
+}
+
+export type ComponentCreateOrConnectWithoutFolderInput = {
+  where: Prisma.ComponentWhereUniqueInput
+  create: Prisma.XOR<Prisma.ComponentCreateWithoutFolderInput, Prisma.ComponentUncheckedCreateWithoutFolderInput>
+}
+
+export type ComponentCreateManyFolderInputEnvelope = {
+  data: Prisma.ComponentCreateManyFolderInput | Prisma.ComponentCreateManyFolderInput[]
+  skipDuplicates?: boolean
+}
+
+export type ComponentUpsertWithWhereUniqueWithoutFolderInput = {
+  where: Prisma.ComponentWhereUniqueInput
+  update: Prisma.XOR<Prisma.ComponentUpdateWithoutFolderInput, Prisma.ComponentUncheckedUpdateWithoutFolderInput>
+  create: Prisma.XOR<Prisma.ComponentCreateWithoutFolderInput, Prisma.ComponentUncheckedCreateWithoutFolderInput>
+}
+
+export type ComponentUpdateWithWhereUniqueWithoutFolderInput = {
+  where: Prisma.ComponentWhereUniqueInput
+  data: Prisma.XOR<Prisma.ComponentUpdateWithoutFolderInput, Prisma.ComponentUncheckedUpdateWithoutFolderInput>
+}
+
+export type ComponentUpdateManyWithWhereWithoutFolderInput = {
+  where: Prisma.ComponentScalarWhereInput
+  data: Prisma.XOR<Prisma.ComponentUpdateManyMutationInput, Prisma.ComponentUncheckedUpdateManyWithoutFolderInput>
 }
 
 export type ComponentCreateWithoutQueryInput = {
@@ -589,6 +710,7 @@ export type ComponentCreateWithoutQueryInput = {
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   user: Prisma.UserCreateNestedOneWithoutComponentsInput
+  folder?: Prisma.FolderCreateNestedOneWithoutComponentsInput
   dashboardComponents?: Prisma.DashboardComponentCreateNestedManyWithoutComponentInput
 }
 
@@ -598,6 +720,7 @@ export type ComponentUncheckedCreateWithoutQueryInput = {
   type?: $Enums.ComponentType
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   userId: string
+  folderId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -640,6 +763,7 @@ export type ComponentCreateWithoutDashboardComponentsInput = {
   deletedAt?: Date | string | null
   query: Prisma.QueryCreateNestedOneWithoutComponentsInput
   user: Prisma.UserCreateNestedOneWithoutComponentsInput
+  folder?: Prisma.FolderCreateNestedOneWithoutComponentsInput
 }
 
 export type ComponentUncheckedCreateWithoutDashboardComponentsInput = {
@@ -649,6 +773,7 @@ export type ComponentUncheckedCreateWithoutDashboardComponentsInput = {
   queryId: string
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   userId: string
+  folderId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -680,6 +805,7 @@ export type ComponentUpdateWithoutDashboardComponentsInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   query?: Prisma.QueryUpdateOneRequiredWithoutComponentsNestedInput
   user?: Prisma.UserUpdateOneRequiredWithoutComponentsNestedInput
+  folder?: Prisma.FolderUpdateOneWithoutComponentsNestedInput
 }
 
 export type ComponentUncheckedUpdateWithoutDashboardComponentsInput = {
@@ -689,6 +815,7 @@ export type ComponentUncheckedUpdateWithoutDashboardComponentsInput = {
   queryId?: Prisma.StringFieldUpdateOperationsInput | string
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -700,6 +827,7 @@ export type ComponentCreateManyUserInput = {
   type?: $Enums.ComponentType
   queryId: string
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  folderId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -714,6 +842,7 @@ export type ComponentUpdateWithoutUserInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   query?: Prisma.QueryUpdateOneRequiredWithoutComponentsNestedInput
+  folder?: Prisma.FolderUpdateOneWithoutComponentsNestedInput
   dashboardComponents?: Prisma.DashboardComponentUpdateManyWithoutComponentNestedInput
 }
 
@@ -723,6 +852,7 @@ export type ComponentUncheckedUpdateWithoutUserInput = {
   type?: Prisma.EnumComponentTypeFieldUpdateOperationsInput | $Enums.ComponentType
   queryId?: Prisma.StringFieldUpdateOperationsInput | string
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -735,6 +865,57 @@ export type ComponentUncheckedUpdateManyWithoutUserInput = {
   type?: Prisma.EnumComponentTypeFieldUpdateOperationsInput | $Enums.ComponentType
   queryId?: Prisma.StringFieldUpdateOperationsInput | string
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+}
+
+export type ComponentCreateManyFolderInput = {
+  id?: string
+  name: string
+  type?: $Enums.ComponentType
+  queryId: string
+  configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  userId: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+}
+
+export type ComponentUpdateWithoutFolderInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumComponentTypeFieldUpdateOperationsInput | $Enums.ComponentType
+  configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  query?: Prisma.QueryUpdateOneRequiredWithoutComponentsNestedInput
+  user?: Prisma.UserUpdateOneRequiredWithoutComponentsNestedInput
+  dashboardComponents?: Prisma.DashboardComponentUpdateManyWithoutComponentNestedInput
+}
+
+export type ComponentUncheckedUpdateWithoutFolderInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumComponentTypeFieldUpdateOperationsInput | $Enums.ComponentType
+  queryId?: Prisma.StringFieldUpdateOperationsInput | string
+  configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dashboardComponents?: Prisma.DashboardComponentUncheckedUpdateManyWithoutComponentNestedInput
+}
+
+export type ComponentUncheckedUpdateManyWithoutFolderInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumComponentTypeFieldUpdateOperationsInput | $Enums.ComponentType
+  queryId?: Prisma.StringFieldUpdateOperationsInput | string
+  configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -746,6 +927,7 @@ export type ComponentCreateManyQueryInput = {
   type?: $Enums.ComponentType
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   userId: string
+  folderId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -760,6 +942,7 @@ export type ComponentUpdateWithoutQueryInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutComponentsNestedInput
+  folder?: Prisma.FolderUpdateOneWithoutComponentsNestedInput
   dashboardComponents?: Prisma.DashboardComponentUpdateManyWithoutComponentNestedInput
 }
 
@@ -769,6 +952,7 @@ export type ComponentUncheckedUpdateWithoutQueryInput = {
   type?: Prisma.EnumComponentTypeFieldUpdateOperationsInput | $Enums.ComponentType
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -781,6 +965,7 @@ export type ComponentUncheckedUpdateManyWithoutQueryInput = {
   type?: Prisma.EnumComponentTypeFieldUpdateOperationsInput | $Enums.ComponentType
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -824,11 +1009,13 @@ export type ComponentSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   queryId?: boolean
   configuration?: boolean
   userId?: boolean
+  folderId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
   query?: boolean | Prisma.QueryDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  folder?: boolean | Prisma.Component$folderArgs<ExtArgs>
   dashboardComponents?: boolean | Prisma.Component$dashboardComponentsArgs<ExtArgs>
   _count?: boolean | Prisma.ComponentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["component"]>
@@ -840,11 +1027,13 @@ export type ComponentSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   queryId?: boolean
   configuration?: boolean
   userId?: boolean
+  folderId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
   query?: boolean | Prisma.QueryDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  folder?: boolean | Prisma.Component$folderArgs<ExtArgs>
 }, ExtArgs["result"]["component"]>
 
 export type ComponentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -854,11 +1043,13 @@ export type ComponentSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   queryId?: boolean
   configuration?: boolean
   userId?: boolean
+  folderId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
   query?: boolean | Prisma.QueryDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  folder?: boolean | Prisma.Component$folderArgs<ExtArgs>
 }, ExtArgs["result"]["component"]>
 
 export type ComponentSelectScalar = {
@@ -868,25 +1059,29 @@ export type ComponentSelectScalar = {
   queryId?: boolean
   configuration?: boolean
   userId?: boolean
+  folderId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   deletedAt?: boolean
 }
 
-export type ComponentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "type" | "queryId" | "configuration" | "userId" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["component"]>
+export type ComponentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "type" | "queryId" | "configuration" | "userId" | "folderId" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["component"]>
 export type ComponentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   query?: boolean | Prisma.QueryDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  folder?: boolean | Prisma.Component$folderArgs<ExtArgs>
   dashboardComponents?: boolean | Prisma.Component$dashboardComponentsArgs<ExtArgs>
   _count?: boolean | Prisma.ComponentCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ComponentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   query?: boolean | Prisma.QueryDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  folder?: boolean | Prisma.Component$folderArgs<ExtArgs>
 }
 export type ComponentIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   query?: boolean | Prisma.QueryDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
+  folder?: boolean | Prisma.Component$folderArgs<ExtArgs>
 }
 
 export type $ComponentPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -894,6 +1089,7 @@ export type $ComponentPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   objects: {
     query: Prisma.$QueryPayload<ExtArgs>
     user: Prisma.$UserPayload<ExtArgs>
+    folder: Prisma.$FolderPayload<ExtArgs> | null
     dashboardComponents: Prisma.$DashboardComponentPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -903,6 +1099,7 @@ export type $ComponentPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     queryId: string
     configuration: runtime.JsonValue
     userId: string
+    folderId: string | null
     createdAt: Date
     updatedAt: Date
     deletedAt: Date | null
@@ -1302,6 +1499,7 @@ export interface Prisma__ComponentClient<T, Null = never, ExtArgs extends runtim
   readonly [Symbol.toStringTag]: "PrismaPromise"
   query<T extends Prisma.QueryDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.QueryDefaultArgs<ExtArgs>>): Prisma.Prisma__QueryClient<runtime.Types.Result.GetResult<Prisma.$QueryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  folder<T extends Prisma.Component$folderArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Component$folderArgs<ExtArgs>>): Prisma.Prisma__FolderClient<runtime.Types.Result.GetResult<Prisma.$FolderPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   dashboardComponents<T extends Prisma.Component$dashboardComponentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Component$dashboardComponentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DashboardComponentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -1338,6 +1536,7 @@ export interface ComponentFieldRefs {
   readonly queryId: Prisma.FieldRef<"Component", 'String'>
   readonly configuration: Prisma.FieldRef<"Component", 'Json'>
   readonly userId: Prisma.FieldRef<"Component", 'String'>
+  readonly folderId: Prisma.FieldRef<"Component", 'String'>
   readonly createdAt: Prisma.FieldRef<"Component", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Component", 'DateTime'>
   readonly deletedAt: Prisma.FieldRef<"Component", 'DateTime'>
@@ -1739,6 +1938,25 @@ export type ComponentDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Limit how many Components to delete.
    */
   limit?: number
+}
+
+/**
+ * Component.folder
+ */
+export type Component$folderArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Folder
+   */
+  select?: Prisma.FolderSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Folder
+   */
+  omit?: Prisma.FolderOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.FolderInclude<ExtArgs> | null
+  where?: Prisma.FolderWhereInput
 }
 
 /**

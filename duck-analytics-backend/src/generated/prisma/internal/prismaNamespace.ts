@@ -391,6 +391,8 @@ export const ModelName = {
   Query: 'Query',
   Component: 'Component',
   Dashboard: 'Dashboard',
+  DashboardEmbed: 'DashboardEmbed',
+  SystemLog: 'SystemLog',
   DashboardComponent: 'DashboardComponent',
   DashboardFilter: 'DashboardFilter'
 } as const
@@ -408,7 +410,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "aIConfig" | "folder" | "dataSource" | "query" | "component" | "dashboard" | "dashboardComponent" | "dashboardFilter"
+    modelProps: "user" | "aIConfig" | "folder" | "dataSource" | "query" | "component" | "dashboard" | "dashboardEmbed" | "systemLog" | "dashboardComponent" | "dashboardFilter"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -930,6 +932,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DashboardEmbed: {
+      payload: Prisma.$DashboardEmbedPayload<ExtArgs>
+      fields: Prisma.DashboardEmbedFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DashboardEmbedFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardEmbedPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DashboardEmbedFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardEmbedPayload>
+        }
+        findFirst: {
+          args: Prisma.DashboardEmbedFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardEmbedPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DashboardEmbedFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardEmbedPayload>
+        }
+        findMany: {
+          args: Prisma.DashboardEmbedFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardEmbedPayload>[]
+        }
+        create: {
+          args: Prisma.DashboardEmbedCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardEmbedPayload>
+        }
+        createMany: {
+          args: Prisma.DashboardEmbedCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DashboardEmbedCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardEmbedPayload>[]
+        }
+        delete: {
+          args: Prisma.DashboardEmbedDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardEmbedPayload>
+        }
+        update: {
+          args: Prisma.DashboardEmbedUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardEmbedPayload>
+        }
+        deleteMany: {
+          args: Prisma.DashboardEmbedDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DashboardEmbedUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DashboardEmbedUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardEmbedPayload>[]
+        }
+        upsert: {
+          args: Prisma.DashboardEmbedUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DashboardEmbedPayload>
+        }
+        aggregate: {
+          args: Prisma.DashboardEmbedAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDashboardEmbed>
+        }
+        groupBy: {
+          args: Prisma.DashboardEmbedGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DashboardEmbedGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DashboardEmbedCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DashboardEmbedCountAggregateOutputType> | number
+        }
+      }
+    }
+    SystemLog: {
+      payload: Prisma.$SystemLogPayload<ExtArgs>
+      fields: Prisma.SystemLogFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SystemLogFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemLogPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SystemLogFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemLogPayload>
+        }
+        findFirst: {
+          args: Prisma.SystemLogFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemLogPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SystemLogFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemLogPayload>
+        }
+        findMany: {
+          args: Prisma.SystemLogFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemLogPayload>[]
+        }
+        create: {
+          args: Prisma.SystemLogCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemLogPayload>
+        }
+        createMany: {
+          args: Prisma.SystemLogCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SystemLogCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemLogPayload>[]
+        }
+        delete: {
+          args: Prisma.SystemLogDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemLogPayload>
+        }
+        update: {
+          args: Prisma.SystemLogUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemLogPayload>
+        }
+        deleteMany: {
+          args: Prisma.SystemLogDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SystemLogUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SystemLogUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemLogPayload>[]
+        }
+        upsert: {
+          args: Prisma.SystemLogUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemLogPayload>
+        }
+        aggregate: {
+          args: Prisma.SystemLogAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSystemLog>
+        }
+        groupBy: {
+          args: Prisma.SystemLogGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SystemLogGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SystemLogCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SystemLogCountAggregateOutputType> | number
+        }
+      }
+    }
     DashboardComponent: {
       payload: Prisma.$DashboardComponentPayload<ExtArgs>
       fields: Prisma.DashboardComponentFieldRefs
@@ -1196,6 +1346,7 @@ export const ComponentScalarFieldEnum = {
   queryId: 'queryId',
   configuration: 'configuration',
   userId: 'userId',
+  folderId: 'folderId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
@@ -1209,6 +1360,7 @@ export const DashboardScalarFieldEnum = {
   name: 'name',
   description: 'description',
   configuration: 'configuration',
+  status: 'status',
   userId: 'userId',
   folderId: 'folderId',
   createdAt: 'createdAt',
@@ -1217,6 +1369,36 @@ export const DashboardScalarFieldEnum = {
 } as const
 
 export type DashboardScalarFieldEnum = (typeof DashboardScalarFieldEnum)[keyof typeof DashboardScalarFieldEnum]
+
+
+export const DashboardEmbedScalarFieldEnum = {
+  id: 'id',
+  dashboardId: 'dashboardId',
+  embedCode: 'embedCode',
+  embedType: 'embedType',
+  showFilters: 'showFilters',
+  showTitle: 'showTitle',
+  embedSecret: 'embedSecret',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DashboardEmbedScalarFieldEnum = (typeof DashboardEmbedScalarFieldEnum)[keyof typeof DashboardEmbedScalarFieldEnum]
+
+
+export const SystemLogScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  level: 'level',
+  source: 'source',
+  event: 'event',
+  resourceId: 'resourceId',
+  message: 'message',
+  metadata: 'metadata',
+  createdAt: 'createdAt'
+} as const
+
+export type SystemLogScalarFieldEnum = (typeof SystemLogScalarFieldEnum)[keyof typeof SystemLogScalarFieldEnum]
 
 
 export const DashboardComponentScalarFieldEnum = {
@@ -1270,6 +1452,14 @@ export const JsonNullValueInput = {
 } as const
 
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {
@@ -1370,6 +1560,55 @@ export type EnumComponentTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$Pr
  * Reference to a field of type 'ComponentType[]'
  */
 export type ListEnumComponentTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ComponentType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'DashboardStatus'
+ */
+export type EnumDashboardStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DashboardStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'DashboardStatus[]'
+ */
+export type ListEnumDashboardStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DashboardStatus[]'>
+    
+
+
+/**
+ * Reference to a field of type 'EmbedType'
+ */
+export type EnumEmbedTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EmbedType'>
+    
+
+
+/**
+ * Reference to a field of type 'EmbedType[]'
+ */
+export type ListEnumEmbedTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EmbedType[]'>
+    
+
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
+ * Reference to a field of type 'LogLevel'
+ */
+export type EnumLogLevelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LogLevel'>
+    
+
+
+/**
+ * Reference to a field of type 'LogLevel[]'
+ */
+export type ListEnumLogLevelFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LogLevel[]'>
     
 
 
@@ -1516,6 +1755,8 @@ export type GlobalOmitConfig = {
   query?: Prisma.QueryOmit
   component?: Prisma.ComponentOmit
   dashboard?: Prisma.DashboardOmit
+  dashboardEmbed?: Prisma.DashboardEmbedOmit
+  systemLog?: Prisma.SystemLogOmit
   dashboardComponent?: Prisma.DashboardComponentOmit
   dashboardFilter?: Prisma.DashboardFilterOmit
 }

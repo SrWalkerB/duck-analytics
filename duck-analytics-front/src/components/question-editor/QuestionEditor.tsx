@@ -2,6 +2,22 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import {
   ArrowLeft,
   Play,
   Database,
@@ -15,10 +31,10 @@ import {
   X,
   Loader2,
   Columns3,
-  MoveUp,
-  MoveDown,
+  GripVertical,
 } from 'lucide-react'
 import { api } from '@/services/api'
+import { AlertTriangle } from 'lucide-react'
 import type {
   DataSource,
   FieldSchema,
@@ -27,6 +43,7 @@ import type {
   Component,
   Query,
   PipelineConfiguration,
+  PipelineStage,
   ChartDisplayConfig,
 } from '@/types'
 import { isPipelineConfiguration } from '@/types'
@@ -43,6 +60,14 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Checkbox } from '@/components/ui/checkbox'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { ChartRenderer } from '@/components/visualizations/ChartRenderer'
 import { ChartOptionsPanel } from '@/components/visualizations/ChartOptionsPanel'
 import { ResultsTable } from '@/components/question-editor/ResultsTable'
@@ -150,12 +175,114 @@ function getInitialPipelineConfig(query?: Query): PipelineConfiguration | undefi
   return convertLegacyToPipeline(query.configuration as QueryConfiguration)
 }
 
+const STAGE_LABELS: Record<string, string> = {
+  $match: 'Filtrar',
+  $lookup: 'Join',
+  $group: 'Agrupar',
+  $sort: 'Ordenar',
+  $project: 'Projeção',
+  $unwind: 'Unwind',
+}
+
+function getFieldUsages(field: string, stages: PipelineStage[]): string[] {
+  const usages: string[] = []
+  for (const stage of stages) {
+    if (!stage.enabled) continue
+    const label = STAGE_LABELS[stage.type] ?? stage.type
+    switch (stage.type) {
+      case '$match':
+        if (stage.filters.some((f) => f.field === field))
+          usages.push(`${label} ($match) — filtro pelo campo "${field}"`)
+        break
+      case '$lookup':
+        if (stage.localField === field)
+          usages.push(`${label} ($lookup) — campo local "${field}" → ${stage.from}`)
+        break
+      case '$group':
+        if (stage.groupBy.includes(field))
+          usages.push(`${label} ($group) — agrupamento por "${field}"`)
+        if (stage.aggregations.some((a) => a.field === field))
+          usages.push(`${label} ($group) — agregação no campo "${field}"`)
+        break
+      case '$sort':
+        if (stage.sort.some((s) => s.field === field))
+          usages.push(`${label} ($sort) — ordenação por "${field}"`)
+        break
+      case '$project':
+        if (stage.include.includes(field))
+          usages.push(`${label} ($project) — projeção inclui "${field}"`)
+        break
+      case '$unwind':
+        if (stage.path === field)
+          usages.push(`${label} ($unwind) — desaninhando "${field}"`)
+        break
+    }
+  }
+  return usages
+}
+
+function SortableColumnItem({
+  col,
+  visible,
+  alias,
+  onToggle,
+  onAliasChange,
+}: {
+  col: string
+  visible: boolean
+  alias: string
+  onToggle: () => void
+  onAliasChange: (value: string) => void
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: col })
+  const style = { transform: CSS.Transform.toString(transform), transition }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        'rounded-md border p-2 space-y-1.5',
+        visible ? 'bg-muted/30' : 'opacity-50',
+      )}
+    >
+      <div className="flex items-center gap-1.5">
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab text-muted-foreground hover:text-foreground touch-none"
+        >
+          <GripVertical size={12} />
+        </button>
+        <Checkbox
+          checked={visible}
+          onCheckedChange={() => onToggle()}
+          className="size-3.5"
+        />
+        <span className="flex-1 truncate text-xs font-medium">
+          {col.includes('.') && <Link2 size={9} className="mr-1 inline text-muted-foreground" />}
+          {col}
+        </span>
+      </div>
+      {visible && (
+        <Input
+          value={alias}
+          onChange={(e) => onAliasChange(e.target.value)}
+          placeholder="Nome de exibição"
+          className="h-7 text-xs"
+        />
+      )}
+    </div>
+  )
+}
+
 interface Props {
   initialQuery?: Query
   initialComponent?: Component
+  folderId?: string
 }
 
-export function QuestionEditor({ initialQuery, initialComponent }: Props) {
+export function QuestionEditor({ initialQuery, initialComponent, folderId }: Props) {
   const navigate = useNavigate()
 
   const [name, setName] = useState(
@@ -200,6 +327,36 @@ export function QuestionEditor({ initialQuery, initialComponent }: Props) {
 
   // Visible columns for TABLE mode
   const [visibleColumns, setVisibleColumns] = useState<string[] | null>(null)
+
+  // Column aliases for TABLE mode
+  const [columnAliases, setColumnAliases] = useState<Record<string, string>>(
+    (initialComponent?.configuration?.['columnAliases'] as Record<string, string>) ?? {},
+  )
+
+  // DnD sensors for column reordering
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  // Column usage alert dialog
+  const [columnAlert, setColumnAlert] = useState<{ col: string; usages: string[] } | null>(null)
+
+  function tryToggleColumn(col: string, currentVisible: string[]) {
+    const isVisible = currentVisible.includes(col)
+    if (isVisible) {
+      // Trying to hide — check if used in pipeline
+      const usages = getFieldUsages(col, pipeline.stages)
+      if (usages.length > 0) {
+        setColumnAlert({ col, usages })
+        return
+      }
+    }
+    const next = isVisible
+      ? currentVisible.filter((c) => c !== col)
+      : [...currentVisible, col]
+    setVisibleColumns(next)
+  }
 
   // AI panel
   const [aiOpen, setAiOpen] = useState(false)
@@ -303,7 +460,14 @@ export function QuestionEditor({ initialQuery, initialComponent }: Props) {
     }
     setIsSaving(true)
     try {
-      const vizConf = { xField, yField, label: vizLabel, display: displayConfig }
+      const vizConf = {
+        xField,
+        yField,
+        label: vizLabel,
+        display: displayConfig,
+        columnAliases: Object.keys(columnAliases).length > 0 ? columnAliases : undefined,
+        columnOrder: visibleColumns ?? undefined,
+      }
       let queryId = initialQuery?.id
 
       if (initialQuery) {
@@ -335,6 +499,7 @@ export function QuestionEditor({ initialQuery, initialComponent }: Props) {
           type: vizType,
           queryId,
           configuration: vizConf,
+          folderId: folderId || undefined,
         })
       }
 
@@ -606,92 +771,97 @@ export function QuestionEditor({ initialQuery, initialComponent }: Props) {
                 <>
                   <Separator />
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Columns3 size={11} />
-                      Colunas visíveis
-                    </Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Columns3 size={11} />
+                        Colunas
+                      </Label>
+                      {resultFields.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 text-[10px] px-1.5"
+                          onClick={() => {
+                            const currentVisible = visibleColumns ?? resultFields.filter((c) => c !== '_id')
+                            const allVisible = currentVisible.length === resultFields.length
+                            if (allVisible) {
+                              // Check if any visible column is used in the pipeline
+                              const allUsages: string[] = []
+                              for (const col of currentVisible) {
+                                allUsages.push(...getFieldUsages(col, pipeline.stages))
+                              }
+                              if (allUsages.length > 0) {
+                                setColumnAlert({ col: '(todos)', usages: allUsages })
+                                return
+                              }
+                              setVisibleColumns([])
+                            } else {
+                              setVisibleColumns([...resultFields])
+                            }
+                          }}
+                        >
+                          {(visibleColumns ?? resultFields.filter((c) => c !== '_id')).length === resultFields.length
+                            ? 'Desmarcar todos'
+                            : 'Marcar todos'}
+                        </Button>
+                      )}
+                    </div>
                     {resultFields.length === 0 ? (
                       <p className="text-xs text-muted-foreground">
                         Execute a query primeiro
                       </p>
                     ) : (
-                      <div className="space-y-1">
-                        {resultFields.map((col, idx) => {
-                          const visible = visibleColumns
-                            ? visibleColumns.includes(col)
-                            : col !== '_id'
-                          return (
-                            <div key={col} className="flex items-center gap-2">
-                              <Checkbox
-                                id={`col-${col}`}
-                                checked={visible}
-                                onCheckedChange={(v) => {
-                                  const current =
-                                    visibleColumns ??
-                                    resultFields.filter((c) => c !== '_id')
-                                  const next = v
-                                    ? [...current, col]
-                                    : current.filter((c) => c !== col)
-                                  setVisibleColumns(next)
-                                }}
-                                className="size-3.5"
-                              />
-                              <label
-                                htmlFor={`col-${col}`}
-                                className="flex flex-1 cursor-pointer items-center gap-1 truncate text-xs"
-                              >
-                                {col.includes('.') && (
-                                  <Link2
-                                    size={9}
-                                    className="shrink-0 text-muted-foreground"
-                                  />
-                                )}
-                                {col}
-                              </label>
-                              <div className="flex gap-0.5">
-                                <button
-                                  className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
-                                  disabled={idx === 0}
-                                  onClick={() => {
-                                    const cols =
-                                      visibleColumns ??
-                                      resultFields.filter((c) => c !== '_id')
-                                    const i = cols.indexOf(col)
-                                    if (i <= 0) return
-                                    const next = [...cols]
-                                    ;[next[i - 1]!, next[i]!] = [
-                                      next[i]!,
-                                      next[i - 1]!,
-                                    ]
-                                    setVisibleColumns(next)
+                      <DndContext
+                        sensors={dndSensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={(event: DragEndEvent) => {
+                          const { active, over } = event
+                          if (!over || active.id === over.id) return
+                          const cols = visibleColumns ?? resultFields.filter((c) => c !== '_id')
+                          const oldIndex = cols.indexOf(String(active.id))
+                          const newIndex = cols.indexOf(String(over.id))
+                          if (oldIndex === -1 || newIndex === -1) return
+                          const next = [...cols]
+                          const [moved] = next.splice(oldIndex, 1)
+                          next.splice(newIndex, 0, moved!)
+                          setVisibleColumns(next)
+                        }}
+                      >
+                        <SortableContext
+                          items={visibleColumns ?? resultFields.filter((c) => c !== '_id')}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <div className="space-y-1.5">
+                            {(() => {
+                              const currentVisible = visibleColumns ?? resultFields.filter((c) => c !== '_id')
+                              const hidden = resultFields.filter((c) => !currentVisible.includes(c))
+                              return [...currentVisible, ...hidden]
+                            })().map((col) => {
+                              const currentVisible = visibleColumns ?? resultFields.filter((c) => c !== '_id')
+                              const visible = currentVisible.includes(col)
+                              return (
+                                <SortableColumnItem
+                                  key={col}
+                                  col={col}
+                                  visible={visible}
+                                  alias={columnAliases[col] ?? ''}
+                                  onToggle={() => tryToggleColumn(col, currentVisible)}
+                                  onAliasChange={(value) => {
+                                    setColumnAliases((prev) => {
+                                      if (!value) {
+                                        const next = { ...prev }
+                                        delete next[col]
+                                        return next
+                                      }
+                                      return { ...prev, [col]: value }
+                                    })
                                   }}
-                                >
-                                  <MoveUp size={11} />
-                                </button>
-                                <button
-                                  className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-30"
-                                  disabled={idx === resultFields.length - 1}
-                                  onClick={() => {
-                                    const cols =
-                                      visibleColumns ??
-                                      resultFields.filter((c) => c !== '_id')
-                                    const i = cols.indexOf(col)
-                                    if (i < 0 || i >= cols.length - 1) return
-                                    const next = [...cols]
-                                    ;[next[i]!, next[i + 1]!] = [
-                                      next[i + 1]!,
-                                      next[i]!,
-                                    ]
-                                    setVisibleColumns(next)
-                                  }}
-                                >
-                                  <MoveDown size={11} />
-                                </button>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
+                                />
+                              )
+                            })}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
                     )}
                   </div>
                 </>
@@ -821,6 +991,9 @@ export function QuestionEditor({ initialQuery, initialComponent }: Props) {
                       }}
                       sort={currentSort}
                       onSortToggle={handleSortToggle}
+                      columnAliases={Object.keys(columnAliases).length > 0 ? columnAliases : undefined}
+                      columnOrder={visibleColumns ?? undefined}
+                      exportFilename={name}
                     />
                   ) : (
                     <ChartRenderer
@@ -941,6 +1114,34 @@ export function QuestionEditor({ initialQuery, initialComponent }: Props) {
           )}
         </div>
       </div>
+
+      {/* Column usage alert dialog */}
+      <Dialog open={columnAlert !== null} onOpenChange={() => setColumnAlert(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle size={16} className="text-amber-500" />
+              Campo em uso
+            </DialogTitle>
+            <DialogDescription>
+              Não é possível ocultar este campo porque ele está sendo utilizado no pipeline:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5 rounded-md bg-muted p-3">
+            {columnAlert?.usages.map((usage, i) => (
+              <div key={i} className="flex items-start gap-2 text-xs">
+                <span className="mt-0.5 shrink-0 text-amber-500">•</span>
+                <span>{usage}</span>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button size="sm" onClick={() => setColumnAlert(null)}>
+              Entendido
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

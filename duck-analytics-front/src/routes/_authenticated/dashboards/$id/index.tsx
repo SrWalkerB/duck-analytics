@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { GripVertical, Link2, Pencil, Plus, SlidersHorizontal } from 'lucide-react'
+import { GripVertical, Link2, Pencil, Plus, Share2, SlidersHorizontal } from 'lucide-react'
 import { api } from '@/services/api'
 import type { Dashboard, DashboardComponent, DashboardFilter, Component, DashboardTab, FilterRelationship } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,7 @@ import { AddQuestionPanel } from '@/components/dashboard/AddQuestionPanel'
 import { FilterBar } from '@/components/dashboard/FilterBar'
 import { FilterEditorPanel } from '@/components/dashboard/FilterEditorPanel'
 import { FilterRelationshipPanel } from '@/components/dashboard/FilterRelationshipPanel'
+import { PublishDialog } from '@/components/dashboard/PublishDialog'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import {
@@ -83,6 +84,7 @@ function DashboardPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [activeFilters, setActiveFilters] = useState<Record<string, unknown[]>>({})
   const [relationshipPanelOpen, setRelationshipPanelOpen] = useState(false)
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false)
 
   const { data: dashboard, isLoading } = useQuery<Dashboard>({
     queryKey: ['dashboard', id],
@@ -327,6 +329,13 @@ function DashboardPage() {
           ],
         }
       : dashboard
+  const usageCountByComponentId = visibleDashboard.dashboardComponents.reduce<Record<string, number>>(
+    (acc, dc) => {
+      acc[dc.componentId] = (acc[dc.componentId] ?? 0) + 1
+      return acc
+    },
+    {},
+  )
 
   return (
     <div className={isEditMode ? 'mt-10' : ''}>
@@ -376,13 +385,19 @@ function DashboardPage() {
                 )}
                 <Button size="sm" variant="outline" className="gap-1" onClick={() => setAddPanelOpen(true)}>
                   <Plus className="h-4 w-4" />
-                  Adicionar questão
+                  Adicionar componente
                 </Button>
               </>
             ) : (
-              <Button size="icon" variant="ghost" onClick={enterEditMode} title="Editar dashboard">
-                <Pencil className="h-4 w-4" />
-              </Button>
+              <>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => setPublishDialogOpen(true)}>
+                  <Share2 className="h-4 w-4" />
+                  {dashboard.status === 'PUBLISHED' ? 'Embed' : 'Publicar'}
+                </Button>
+                <Button size="icon" variant="ghost" onClick={enterEditMode} title="Editar dashboard">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -441,6 +456,7 @@ function DashboardPage() {
             open={addPanelOpen}
             onClose={() => setAddPanelOpen(false)}
             components={allComponents ?? []}
+            usageCountByComponentId={usageCountByComponentId}
             onAdd={handleAddQuestion}
           />
           <FilterEditorPanel
@@ -477,6 +493,14 @@ function DashboardPage() {
             }}
           />
         </>
+      )}
+
+      {dashboard && (
+        <PublishDialog
+          dashboard={dashboard}
+          open={publishDialogOpen}
+          onOpenChange={setPublishDialogOpen}
+        />
       )}
     </div>
   )

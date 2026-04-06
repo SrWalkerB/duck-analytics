@@ -13,6 +13,7 @@ export const envSchema = z.object({
     .default('http://localhost:5173,http://localhost:5174'),
   RATE_LIMIT_TTL: z.coerce.number().default(60_000),
   RATE_LIMIT_LIMIT: z.coerce.number().default(100),
+  EMBED_JWT_SECRET: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

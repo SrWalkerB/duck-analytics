@@ -35,3 +35,28 @@ export const FilterType = {
 } as const
 
 export type FilterType = (typeof FilterType)[keyof typeof FilterType]
+
+
+export const DashboardStatus = {
+  DRAFT: 'DRAFT',
+  PUBLISHED: 'PUBLISHED'
+} as const
+
+export type DashboardStatus = (typeof DashboardStatus)[keyof typeof DashboardStatus]
+
+
+export const EmbedType = {
+  PUBLIC: 'PUBLIC',
+  JWT_SECURED: 'JWT_SECURED'
+} as const
+
+export type EmbedType = (typeof EmbedType)[keyof typeof EmbedType]
+
+
+export const LogLevel = {
+  INFO: 'INFO',
+  WARN: 'WARN',
+  ERROR: 'ERROR'
+} as const
+
+export type LogLevel = (typeof LogLevel)[keyof typeof LogLevel]

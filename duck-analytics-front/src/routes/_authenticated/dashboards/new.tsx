@@ -9,19 +9,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/_authenticated/dashboards/new')({
+  validateSearch: (search: Record<string, unknown>) => ({
+    folderId: (search.folderId as string) || undefined,
+  }),
   component: NewDashboardPage,
 })
 
 function NewDashboardPage() {
   const navigate = useNavigate()
   const qc = useQueryClient()
+  const { folderId } = Route.useSearch()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
 
   const mutation = useMutation({
-    mutationFn: () => api.post('/v1/dashboards', { name, description: description || undefined }),
+    mutationFn: () =>
+      api.post('/v1/dashboards', {
+        name,
+        description: description || undefined,
+        folderId: folderId || undefined,
+      }),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['dashboards'] })
+      qc.invalidateQueries({ queryKey: ['collection-contents'] })
       toast.success('Dashboard created')
       navigate({ to: '/dashboards/$id/edit', params: { id: res.data.id } })
     },

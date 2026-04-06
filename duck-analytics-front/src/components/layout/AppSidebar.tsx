@@ -1,5 +1,5 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Blocks, Database, LayoutDashboard, LogOut, Settings } from 'lucide-react'
+import { Database, FolderOpen, LogOut, ScrollText, Settings } from 'lucide-react'
 import {
   Sidebar,
   SidebarContent,
@@ -13,12 +13,7 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
 import { Button } from '@/components/ui/button'
-
-const navItems = [
-  { label: 'Dashboards', to: '/dashboards', icon: LayoutDashboard },
-  { label: 'Components', to: '/questions', icon: Blocks },
-  { label: 'Data Sources', to: '/data-sources', icon: Database },
-]
+import { FolderTreeSidebar } from '@/components/collection/FolderTreeSidebar'
 
 export function AppSidebar() {
   const navigate = useNavigate()
@@ -37,26 +32,41 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Coleções</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.to}>
-                  <SidebarMenuButton asChild>
-                    <Link to={item.to}>
-                      <item.icon className="size-4" />
-                      <span>{item.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/collection">
+                    <FolderOpen className="size-4" />
+                    <span>Todas as coleções</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
+            <FolderTreeSidebar />
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>Account</SidebarGroupLabel>
+          <SidebarGroupLabel>Configurações</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/data-sources">
+                    <Database className="size-4" />
+                    <span>Data Sources</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link to="/logs">
+                    <ScrollText className="size-4" />
+                    <span>Logs</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <Link to="/settings">

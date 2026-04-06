@@ -26,6 +26,22 @@ enum FilterType {
   TEXT
 }
 
+enum DashboardStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum EmbedType {
+  PUBLIC
+  JWT_SECURED
+}
+
+enum LogLevel {
+  INFO
+  WARN
+  ERROR
+}
+
 model User {
   id          String      @id @default(uuid(7))
   email       String      @unique
@@ -41,6 +57,7 @@ model User {
   dashboards   Dashboard[]
   folders      Folder[]
   aiConfig     AIConfig?
+  systemLogs   SystemLog[]
 
   @@map("users")
 }
@@ -73,6 +90,7 @@ model Folder {
   dataSources DataSource[]
   queries     Query[]
   dashboards  Dashboard[]
+  components  Component[]
 
   @@map("folders")
 }
@@ -128,6 +146,8 @@ model Component {
   configuration Json          @default("{}")
   userId        String        @map("user_id")
   user          User          @relation(fields: [userId], references: [id])
+  folderId      String?       @map("folder_id")
+  folder        Folder?       @relation(fields: [folderId], references: [id])
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
   deletedAt     DateTime?     @map("deleted_at")
@@ -138,22 +158,56 @@ model Component {
 }
 
 model Dashboard {
-  id            String    @id @default(uuid(7))
+  id            String          @id @default(uuid(7))
   name          String
   description   String?
-  configuration Json      @default("{}")
-  userId        String    @map("user_id")
-  user          User      @relation(fields: [userId], references: [id])
-  folderId      String?   @map("folder_id")
-  folder        Folder?   @relation(fields: [folderId], references: [id])
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  deletedAt     DateTime? @map("deleted_at")
+  configuration Json            @default("{}")
+  status        DashboardStatus @default(DRAFT)
+  userId        String          @map("user_id")
+  user          User            @relation(fields: [userId], references: [id])
+  folderId      String?         @map("folder_id")
+  folder        Folder?         @relation(fields: [folderId], references: [id])
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  deletedAt     DateTime?       @map("deleted_at")
 
   dashboardComponents DashboardComponent[]
   dashboardFilters    DashboardFilter[]
+  embed               DashboardEmbed?
 
   @@map("dashboards")
+}
+
+model DashboardEmbed {
+  id          String    @id @default(uuid(7))
+  dashboardId String    @unique @map("dashboard_id")
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id])
+  embedCode   String    @unique @map("embed_code")
+  embedType   EmbedType @default(PUBLIC) @map("embed_type")
+  showFilters Boolean   @default(true) @map("show_filters")
+  showTitle   Boolean   @default(true) @map("show_title")
+  embedSecret String?   @map("embed_secret")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("dashboard_embeds")
+}
+
+model SystemLog {
+  id         String   @id @default(uuid(7))
+  userId     String   @map("user_id")
+  user       User     @relation(fields: [userId], references: [id])
+  level      LogLevel @default(INFO)
+  source     String
+  event      String
+  resourceId String?  @map("resource_id")
+  message    String
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId, source, createdAt])
+  @@index([resourceId, createdAt])
+  @@map("system_logs")
 }
 
 model DashboardComponent {

@@ -177,6 +177,27 @@ export class QueriesService {
     return { data: results, count: results.length };
   }
 
+  async executeInternal(id: string, injectedFilters?: QueryFilter[]) {
+    const query = await this.prisma.query.findFirst({
+      where: { id, deletedAt: null },
+      include: { dataSource: true },
+    });
+    if (!query) throw new NotFoundException('Query not found');
+    const db = await this.mongodb.getDb(
+      query.dataSource.connectionString,
+      query.dataSource.database,
+    );
+    const pipeline = this.builder.compileAny(
+      query.configuration as QueryConfigurationAny,
+      injectedFilters,
+    );
+    const results = await db
+      .collection(query.collection)
+      .aggregate(pipeline as object[])
+      .toArray();
+    return { data: results, count: results.length };
+  }
+
   async preview(userId: string, dto: PreviewQueryDto) {
     const ds = await this.dataSources.findOne(dto.dataSourceId, userId);
     const db = await this.mongodb.getDb(ds.connectionString, ds.database);

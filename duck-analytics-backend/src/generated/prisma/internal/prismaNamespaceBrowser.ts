@@ -58,6 +58,8 @@ export const ModelName = {
   Query: 'Query',
   Component: 'Component',
   Dashboard: 'Dashboard',
+  DashboardEmbed: 'DashboardEmbed',
+  SystemLog: 'SystemLog',
   DashboardComponent: 'DashboardComponent',
   DashboardFilter: 'DashboardFilter'
 } as const
@@ -157,6 +159,7 @@ export const ComponentScalarFieldEnum = {
   queryId: 'queryId',
   configuration: 'configuration',
   userId: 'userId',
+  folderId: 'folderId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   deletedAt: 'deletedAt'
@@ -170,6 +173,7 @@ export const DashboardScalarFieldEnum = {
   name: 'name',
   description: 'description',
   configuration: 'configuration',
+  status: 'status',
   userId: 'userId',
   folderId: 'folderId',
   createdAt: 'createdAt',
@@ -178,6 +182,36 @@ export const DashboardScalarFieldEnum = {
 } as const
 
 export type DashboardScalarFieldEnum = (typeof DashboardScalarFieldEnum)[keyof typeof DashboardScalarFieldEnum]
+
+
+export const DashboardEmbedScalarFieldEnum = {
+  id: 'id',
+  dashboardId: 'dashboardId',
+  embedCode: 'embedCode',
+  embedType: 'embedType',
+  showFilters: 'showFilters',
+  showTitle: 'showTitle',
+  embedSecret: 'embedSecret',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DashboardEmbedScalarFieldEnum = (typeof DashboardEmbedScalarFieldEnum)[keyof typeof DashboardEmbedScalarFieldEnum]
+
+
+export const SystemLogScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  level: 'level',
+  source: 'source',
+  event: 'event',
+  resourceId: 'resourceId',
+  message: 'message',
+  metadata: 'metadata',
+  createdAt: 'createdAt'
+} as const
+
+export type SystemLogScalarFieldEnum = (typeof SystemLogScalarFieldEnum)[keyof typeof SystemLogScalarFieldEnum]
 
 
 export const DashboardComponentScalarFieldEnum = {
@@ -231,6 +265,14 @@ export const JsonNullValueInput = {
 } as const
 
 export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {

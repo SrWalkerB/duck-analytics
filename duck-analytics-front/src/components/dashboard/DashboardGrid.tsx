@@ -226,7 +226,7 @@ export function DashboardGrid({
               <div className="space-y-1">
                 <p className="text-base font-semibold">Esta aba está vazia</p>
                 <p className="text-sm text-muted-foreground">
-                  Clique em <strong>Adicionar questão</strong> para incluir um gráfico ou tabela.
+                  Clique em <strong>Adicionar componente</strong> para incluir um gráfico ou tabela.
                 </p>
               </div>
             </>

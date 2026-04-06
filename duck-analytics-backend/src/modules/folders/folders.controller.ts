@@ -19,6 +19,21 @@ import type { UpdateFolderDto } from './dto/update-folder.dto';
 export class FoldersController {
   constructor(private readonly service: FoldersService) {}
 
+  @Get('tree')
+  getTree(@CurrentUser() userId: string) {
+    return this.service.getTree(userId);
+  }
+
+  @Get('root/contents')
+  getRootContents(@CurrentUser() userId: string) {
+    return this.service.getContents(null, userId);
+  }
+
+  @Get(':id/contents')
+  getContents(@Param('id') id: string, @CurrentUser() userId: string) {
+    return this.service.getContents(id, userId);
+  }
+
   @Get()
   findAll(@CurrentUser() userId: string) {
     return this.service.findAll(userId);

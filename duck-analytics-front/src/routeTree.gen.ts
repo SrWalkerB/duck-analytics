@@ -13,12 +13,15 @@ import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EmbedCodeRouteImport } from './routes/embed/$code'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedQuestionsIndexRouteImport } from './routes/_authenticated/questions/index'
 import { Route as AuthenticatedQueriesIndexRouteImport } from './routes/_authenticated/queries/index'
+import { Route as AuthenticatedLogsIndexRouteImport } from './routes/_authenticated/logs/index'
 import { Route as AuthenticatedDataSourcesIndexRouteImport } from './routes/_authenticated/data-sources/index'
 import { Route as AuthenticatedDashboardsIndexRouteImport } from './routes/_authenticated/dashboards/index'
 import { Route as AuthenticatedComponentsIndexRouteImport } from './routes/_authenticated/components/index'
+import { Route as AuthenticatedCollectionIndexRouteImport } from './routes/_authenticated/collection/index'
 import { Route as AuthenticatedQuestionsNewRouteImport } from './routes/_authenticated/questions/new'
 import { Route as AuthenticatedQuestionsIdRouteImport } from './routes/_authenticated/questions/$id'
 import { Route as AuthenticatedQueriesNewRouteImport } from './routes/_authenticated/queries/new'
@@ -28,6 +31,7 @@ import { Route as AuthenticatedDataSourcesIdRouteImport } from './routes/_authen
 import { Route as AuthenticatedDashboardsNewRouteImport } from './routes/_authenticated/dashboards/new'
 import { Route as AuthenticatedComponentsNewRouteImport } from './routes/_authenticated/components/new'
 import { Route as AuthenticatedComponentsIdRouteImport } from './routes/_authenticated/components/$id'
+import { Route as AuthenticatedCollectionFolderIdRouteImport } from './routes/_authenticated/collection/$folderId'
 import { Route as AuthenticatedDashboardsIdIndexRouteImport } from './routes/_authenticated/dashboards/$id/index'
 import { Route as AuthenticatedDashboardsIdEditRouteImport } from './routes/_authenticated/dashboards/$id/edit'
 
@@ -50,6 +54,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EmbedCodeRoute = EmbedCodeRouteImport.update({
+  id: '/embed/$code',
+  path: '/embed/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSettingsIndexRoute =
   AuthenticatedSettingsIndexRouteImport.update({
     id: '/settings/',
@@ -68,6 +77,11 @@ const AuthenticatedQueriesIndexRoute =
     path: '/queries/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedLogsIndexRoute = AuthenticatedLogsIndexRouteImport.update({
+  id: '/logs/',
+  path: '/logs/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDataSourcesIndexRoute =
   AuthenticatedDataSourcesIndexRouteImport.update({
     id: '/data-sources/',
@@ -84,6 +98,12 @@ const AuthenticatedComponentsIndexRoute =
   AuthenticatedComponentsIndexRouteImport.update({
     id: '/components/',
     path: '/components/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCollectionIndexRoute =
+  AuthenticatedCollectionIndexRouteImport.update({
+    id: '/collection/',
+    path: '/collection/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedQuestionsNewRoute =
@@ -138,6 +158,12 @@ const AuthenticatedComponentsIdRoute =
     path: '/components/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedCollectionFolderIdRoute =
+  AuthenticatedCollectionFolderIdRouteImport.update({
+    id: '/collection/$folderId',
+    path: '/collection/$folderId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDashboardsIdIndexRoute =
   AuthenticatedDashboardsIdIndexRouteImport.update({
     id: '/dashboards/$id/',
@@ -155,6 +181,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/embed/$code': typeof EmbedCodeRoute
+  '/collection/$folderId': typeof AuthenticatedCollectionFolderIdRoute
   '/components/$id': typeof AuthenticatedComponentsIdRoute
   '/components/new': typeof AuthenticatedComponentsNewRoute
   '/dashboards/new': typeof AuthenticatedDashboardsNewRoute
@@ -164,9 +192,11 @@ export interface FileRoutesByFullPath {
   '/queries/new': typeof AuthenticatedQueriesNewRoute
   '/questions/$id': typeof AuthenticatedQuestionsIdRoute
   '/questions/new': typeof AuthenticatedQuestionsNewRoute
+  '/collection/': typeof AuthenticatedCollectionIndexRoute
   '/components/': typeof AuthenticatedComponentsIndexRoute
   '/dashboards/': typeof AuthenticatedDashboardsIndexRoute
   '/data-sources/': typeof AuthenticatedDataSourcesIndexRoute
+  '/logs/': typeof AuthenticatedLogsIndexRoute
   '/queries/': typeof AuthenticatedQueriesIndexRoute
   '/questions/': typeof AuthenticatedQuestionsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -177,6 +207,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/embed/$code': typeof EmbedCodeRoute
+  '/collection/$folderId': typeof AuthenticatedCollectionFolderIdRoute
   '/components/$id': typeof AuthenticatedComponentsIdRoute
   '/components/new': typeof AuthenticatedComponentsNewRoute
   '/dashboards/new': typeof AuthenticatedDashboardsNewRoute
@@ -186,9 +218,11 @@ export interface FileRoutesByTo {
   '/queries/new': typeof AuthenticatedQueriesNewRoute
   '/questions/$id': typeof AuthenticatedQuestionsIdRoute
   '/questions/new': typeof AuthenticatedQuestionsNewRoute
+  '/collection': typeof AuthenticatedCollectionIndexRoute
   '/components': typeof AuthenticatedComponentsIndexRoute
   '/dashboards': typeof AuthenticatedDashboardsIndexRoute
   '/data-sources': typeof AuthenticatedDataSourcesIndexRoute
+  '/logs': typeof AuthenticatedLogsIndexRoute
   '/queries': typeof AuthenticatedQueriesIndexRoute
   '/questions': typeof AuthenticatedQuestionsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -201,6 +235,8 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/embed/$code': typeof EmbedCodeRoute
+  '/_authenticated/collection/$folderId': typeof AuthenticatedCollectionFolderIdRoute
   '/_authenticated/components/$id': typeof AuthenticatedComponentsIdRoute
   '/_authenticated/components/new': typeof AuthenticatedComponentsNewRoute
   '/_authenticated/dashboards/new': typeof AuthenticatedDashboardsNewRoute
@@ -210,9 +246,11 @@ export interface FileRoutesById {
   '/_authenticated/queries/new': typeof AuthenticatedQueriesNewRoute
   '/_authenticated/questions/$id': typeof AuthenticatedQuestionsIdRoute
   '/_authenticated/questions/new': typeof AuthenticatedQuestionsNewRoute
+  '/_authenticated/collection/': typeof AuthenticatedCollectionIndexRoute
   '/_authenticated/components/': typeof AuthenticatedComponentsIndexRoute
   '/_authenticated/dashboards/': typeof AuthenticatedDashboardsIndexRoute
   '/_authenticated/data-sources/': typeof AuthenticatedDataSourcesIndexRoute
+  '/_authenticated/logs/': typeof AuthenticatedLogsIndexRoute
   '/_authenticated/queries/': typeof AuthenticatedQueriesIndexRoute
   '/_authenticated/questions/': typeof AuthenticatedQuestionsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -225,6 +263,8 @@ export interface FileRouteTypes {
     | '/'
     | '/sign-in'
     | '/sign-up'
+    | '/embed/$code'
+    | '/collection/$folderId'
     | '/components/$id'
     | '/components/new'
     | '/dashboards/new'
@@ -234,9 +274,11 @@ export interface FileRouteTypes {
     | '/queries/new'
     | '/questions/$id'
     | '/questions/new'
+    | '/collection/'
     | '/components/'
     | '/dashboards/'
     | '/data-sources/'
+    | '/logs/'
     | '/queries/'
     | '/questions/'
     | '/settings/'
@@ -247,6 +289,8 @@ export interface FileRouteTypes {
     | '/'
     | '/sign-in'
     | '/sign-up'
+    | '/embed/$code'
+    | '/collection/$folderId'
     | '/components/$id'
     | '/components/new'
     | '/dashboards/new'
@@ -256,9 +300,11 @@ export interface FileRouteTypes {
     | '/queries/new'
     | '/questions/$id'
     | '/questions/new'
+    | '/collection'
     | '/components'
     | '/dashboards'
     | '/data-sources'
+    | '/logs'
     | '/queries'
     | '/questions'
     | '/settings'
@@ -270,6 +316,8 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/sign-in'
     | '/sign-up'
+    | '/embed/$code'
+    | '/_authenticated/collection/$folderId'
     | '/_authenticated/components/$id'
     | '/_authenticated/components/new'
     | '/_authenticated/dashboards/new'
@@ -279,9 +327,11 @@ export interface FileRouteTypes {
     | '/_authenticated/queries/new'
     | '/_authenticated/questions/$id'
     | '/_authenticated/questions/new'
+    | '/_authenticated/collection/'
     | '/_authenticated/components/'
     | '/_authenticated/dashboards/'
     | '/_authenticated/data-sources/'
+    | '/_authenticated/logs/'
     | '/_authenticated/queries/'
     | '/_authenticated/questions/'
     | '/_authenticated/settings/'
@@ -294,6 +344,7 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
+  EmbedCodeRoute: typeof EmbedCodeRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -326,6 +377,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/embed/$code': {
+      id: '/embed/$code'
+      path: '/embed/$code'
+      fullPath: '/embed/$code'
+      preLoaderRoute: typeof EmbedCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/settings/': {
       id: '/_authenticated/settings/'
       path: '/settings'
@@ -347,6 +405,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedQueriesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/logs/': {
+      id: '/_authenticated/logs/'
+      path: '/logs'
+      fullPath: '/logs/'
+      preLoaderRoute: typeof AuthenticatedLogsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/data-sources/': {
       id: '/_authenticated/data-sources/'
       path: '/data-sources'
@@ -366,6 +431,13 @@ declare module '@tanstack/react-router' {
       path: '/components'
       fullPath: '/components/'
       preLoaderRoute: typeof AuthenticatedComponentsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/collection/': {
+      id: '/_authenticated/collection/'
+      path: '/collection'
+      fullPath: '/collection/'
+      preLoaderRoute: typeof AuthenticatedCollectionIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/questions/new': {
@@ -431,6 +503,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedComponentsIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/collection/$folderId': {
+      id: '/_authenticated/collection/$folderId'
+      path: '/collection/$folderId'
+      fullPath: '/collection/$folderId'
+      preLoaderRoute: typeof AuthenticatedCollectionFolderIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/dashboards/$id/': {
       id: '/_authenticated/dashboards/$id/'
       path: '/dashboards/$id'
@@ -449,6 +528,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedCollectionFolderIdRoute: typeof AuthenticatedCollectionFolderIdRoute
   AuthenticatedComponentsIdRoute: typeof AuthenticatedComponentsIdRoute
   AuthenticatedComponentsNewRoute: typeof AuthenticatedComponentsNewRoute
   AuthenticatedDashboardsNewRoute: typeof AuthenticatedDashboardsNewRoute
@@ -458,9 +538,11 @@ interface AuthenticatedRouteChildren {
   AuthenticatedQueriesNewRoute: typeof AuthenticatedQueriesNewRoute
   AuthenticatedQuestionsIdRoute: typeof AuthenticatedQuestionsIdRoute
   AuthenticatedQuestionsNewRoute: typeof AuthenticatedQuestionsNewRoute
+  AuthenticatedCollectionIndexRoute: typeof AuthenticatedCollectionIndexRoute
   AuthenticatedComponentsIndexRoute: typeof AuthenticatedComponentsIndexRoute
   AuthenticatedDashboardsIndexRoute: typeof AuthenticatedDashboardsIndexRoute
   AuthenticatedDataSourcesIndexRoute: typeof AuthenticatedDataSourcesIndexRoute
+  AuthenticatedLogsIndexRoute: typeof AuthenticatedLogsIndexRoute
   AuthenticatedQueriesIndexRoute: typeof AuthenticatedQueriesIndexRoute
   AuthenticatedQuestionsIndexRoute: typeof AuthenticatedQuestionsIndexRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
@@ -469,6 +551,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedCollectionFolderIdRoute: AuthenticatedCollectionFolderIdRoute,
   AuthenticatedComponentsIdRoute: AuthenticatedComponentsIdRoute,
   AuthenticatedComponentsNewRoute: AuthenticatedComponentsNewRoute,
   AuthenticatedDashboardsNewRoute: AuthenticatedDashboardsNewRoute,
@@ -478,9 +561,11 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedQueriesNewRoute: AuthenticatedQueriesNewRoute,
   AuthenticatedQuestionsIdRoute: AuthenticatedQuestionsIdRoute,
   AuthenticatedQuestionsNewRoute: AuthenticatedQuestionsNewRoute,
+  AuthenticatedCollectionIndexRoute: AuthenticatedCollectionIndexRoute,
   AuthenticatedComponentsIndexRoute: AuthenticatedComponentsIndexRoute,
   AuthenticatedDashboardsIndexRoute: AuthenticatedDashboardsIndexRoute,
   AuthenticatedDataSourcesIndexRoute: AuthenticatedDataSourcesIndexRoute,
+  AuthenticatedLogsIndexRoute: AuthenticatedLogsIndexRoute,
   AuthenticatedQueriesIndexRoute: AuthenticatedQueriesIndexRoute,
   AuthenticatedQuestionsIndexRoute: AuthenticatedQuestionsIndexRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
@@ -497,6 +582,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
+  EmbedCodeRoute: EmbedCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -28,6 +28,7 @@ export type DashboardMinAggregateOutputType = {
   id: string | null
   name: string | null
   description: string | null
+  status: $Enums.DashboardStatus | null
   userId: string | null
   folderId: string | null
   createdAt: Date | null
@@ -39,6 +40,7 @@ export type DashboardMaxAggregateOutputType = {
   id: string | null
   name: string | null
   description: string | null
+  status: $Enums.DashboardStatus | null
   userId: string | null
   folderId: string | null
   createdAt: Date | null
@@ -51,6 +53,7 @@ export type DashboardCountAggregateOutputType = {
   name: number
   description: number
   configuration: number
+  status: number
   userId: number
   folderId: number
   createdAt: number
@@ -64,6 +67,7 @@ export type DashboardMinAggregateInputType = {
   id?: true
   name?: true
   description?: true
+  status?: true
   userId?: true
   folderId?: true
   createdAt?: true
@@ -75,6 +79,7 @@ export type DashboardMaxAggregateInputType = {
   id?: true
   name?: true
   description?: true
+  status?: true
   userId?: true
   folderId?: true
   createdAt?: true
@@ -87,6 +92,7 @@ export type DashboardCountAggregateInputType = {
   name?: true
   description?: true
   configuration?: true
+  status?: true
   userId?: true
   folderId?: true
   createdAt?: true
@@ -172,6 +178,7 @@ export type DashboardGroupByOutputType = {
   name: string
   description: string | null
   configuration: runtime.JsonValue
+  status: $Enums.DashboardStatus
   userId: string
   folderId: string | null
   createdAt: Date
@@ -205,6 +212,7 @@ export type DashboardWhereInput = {
   name?: Prisma.StringFilter<"Dashboard"> | string
   description?: Prisma.StringNullableFilter<"Dashboard"> | string | null
   configuration?: Prisma.JsonFilter<"Dashboard">
+  status?: Prisma.EnumDashboardStatusFilter<"Dashboard"> | $Enums.DashboardStatus
   userId?: Prisma.StringFilter<"Dashboard"> | string
   folderId?: Prisma.StringNullableFilter<"Dashboard"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Dashboard"> | Date | string
@@ -214,6 +222,7 @@ export type DashboardWhereInput = {
   folder?: Prisma.XOR<Prisma.FolderNullableScalarRelationFilter, Prisma.FolderWhereInput> | null
   dashboardComponents?: Prisma.DashboardComponentListRelationFilter
   dashboardFilters?: Prisma.DashboardFilterListRelationFilter
+  embed?: Prisma.XOR<Prisma.DashboardEmbedNullableScalarRelationFilter, Prisma.DashboardEmbedWhereInput> | null
 }
 
 export type DashboardOrderByWithRelationInput = {
@@ -221,6 +230,7 @@ export type DashboardOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   configuration?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   folderId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -230,6 +240,7 @@ export type DashboardOrderByWithRelationInput = {
   folder?: Prisma.FolderOrderByWithRelationInput
   dashboardComponents?: Prisma.DashboardComponentOrderByRelationAggregateInput
   dashboardFilters?: Prisma.DashboardFilterOrderByRelationAggregateInput
+  embed?: Prisma.DashboardEmbedOrderByWithRelationInput
 }
 
 export type DashboardWhereUniqueInput = Prisma.AtLeast<{
@@ -240,6 +251,7 @@ export type DashboardWhereUniqueInput = Prisma.AtLeast<{
   name?: Prisma.StringFilter<"Dashboard"> | string
   description?: Prisma.StringNullableFilter<"Dashboard"> | string | null
   configuration?: Prisma.JsonFilter<"Dashboard">
+  status?: Prisma.EnumDashboardStatusFilter<"Dashboard"> | $Enums.DashboardStatus
   userId?: Prisma.StringFilter<"Dashboard"> | string
   folderId?: Prisma.StringNullableFilter<"Dashboard"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Dashboard"> | Date | string
@@ -249,6 +261,7 @@ export type DashboardWhereUniqueInput = Prisma.AtLeast<{
   folder?: Prisma.XOR<Prisma.FolderNullableScalarRelationFilter, Prisma.FolderWhereInput> | null
   dashboardComponents?: Prisma.DashboardComponentListRelationFilter
   dashboardFilters?: Prisma.DashboardFilterListRelationFilter
+  embed?: Prisma.XOR<Prisma.DashboardEmbedNullableScalarRelationFilter, Prisma.DashboardEmbedWhereInput> | null
 }, "id">
 
 export type DashboardOrderByWithAggregationInput = {
@@ -256,6 +269,7 @@ export type DashboardOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   configuration?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   folderId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -274,6 +288,7 @@ export type DashboardScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"Dashboard"> | string
   description?: Prisma.StringNullableWithAggregatesFilter<"Dashboard"> | string | null
   configuration?: Prisma.JsonWithAggregatesFilter<"Dashboard">
+  status?: Prisma.EnumDashboardStatusWithAggregatesFilter<"Dashboard"> | $Enums.DashboardStatus
   userId?: Prisma.StringWithAggregatesFilter<"Dashboard"> | string
   folderId?: Prisma.StringNullableWithAggregatesFilter<"Dashboard"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Dashboard"> | Date | string
@@ -286,6 +301,7 @@ export type DashboardCreateInput = {
   name: string
   description?: string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
@@ -293,6 +309,7 @@ export type DashboardCreateInput = {
   folder?: Prisma.FolderCreateNestedOneWithoutDashboardsInput
   dashboardComponents?: Prisma.DashboardComponentCreateNestedManyWithoutDashboardInput
   dashboardFilters?: Prisma.DashboardFilterCreateNestedManyWithoutDashboardInput
+  embed?: Prisma.DashboardEmbedCreateNestedOneWithoutDashboardInput
 }
 
 export type DashboardUncheckedCreateInput = {
@@ -300,6 +317,7 @@ export type DashboardUncheckedCreateInput = {
   name: string
   description?: string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
   userId: string
   folderId?: string | null
   createdAt?: Date | string
@@ -307,6 +325,7 @@ export type DashboardUncheckedCreateInput = {
   deletedAt?: Date | string | null
   dashboardComponents?: Prisma.DashboardComponentUncheckedCreateNestedManyWithoutDashboardInput
   dashboardFilters?: Prisma.DashboardFilterUncheckedCreateNestedManyWithoutDashboardInput
+  embed?: Prisma.DashboardEmbedUncheckedCreateNestedOneWithoutDashboardInput
 }
 
 export type DashboardUpdateInput = {
@@ -314,6 +333,7 @@ export type DashboardUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -321,6 +341,7 @@ export type DashboardUpdateInput = {
   folder?: Prisma.FolderUpdateOneWithoutDashboardsNestedInput
   dashboardComponents?: Prisma.DashboardComponentUpdateManyWithoutDashboardNestedInput
   dashboardFilters?: Prisma.DashboardFilterUpdateManyWithoutDashboardNestedInput
+  embed?: Prisma.DashboardEmbedUpdateOneWithoutDashboardNestedInput
 }
 
 export type DashboardUncheckedUpdateInput = {
@@ -328,6 +349,7 @@ export type DashboardUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -335,6 +357,7 @@ export type DashboardUncheckedUpdateInput = {
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dashboardComponents?: Prisma.DashboardComponentUncheckedUpdateManyWithoutDashboardNestedInput
   dashboardFilters?: Prisma.DashboardFilterUncheckedUpdateManyWithoutDashboardNestedInput
+  embed?: Prisma.DashboardEmbedUncheckedUpdateOneWithoutDashboardNestedInput
 }
 
 export type DashboardCreateManyInput = {
@@ -342,6 +365,7 @@ export type DashboardCreateManyInput = {
   name: string
   description?: string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
   userId: string
   folderId?: string | null
   createdAt?: Date | string
@@ -354,6 +378,7 @@ export type DashboardUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -364,6 +389,7 @@ export type DashboardUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -386,6 +412,7 @@ export type DashboardCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
   configuration?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   folderId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -397,6 +424,7 @@ export type DashboardMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   folderId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -408,6 +436,7 @@ export type DashboardMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   name?: Prisma.SortOrder
   description?: Prisma.SortOrder
+  status?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   folderId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -504,6 +533,24 @@ export type DashboardUncheckedUpdateManyWithoutFolderNestedInput = {
   deleteMany?: Prisma.DashboardScalarWhereInput | Prisma.DashboardScalarWhereInput[]
 }
 
+export type EnumDashboardStatusFieldUpdateOperationsInput = {
+  set?: $Enums.DashboardStatus
+}
+
+export type DashboardCreateNestedOneWithoutEmbedInput = {
+  create?: Prisma.XOR<Prisma.DashboardCreateWithoutEmbedInput, Prisma.DashboardUncheckedCreateWithoutEmbedInput>
+  connectOrCreate?: Prisma.DashboardCreateOrConnectWithoutEmbedInput
+  connect?: Prisma.DashboardWhereUniqueInput
+}
+
+export type DashboardUpdateOneRequiredWithoutEmbedNestedInput = {
+  create?: Prisma.XOR<Prisma.DashboardCreateWithoutEmbedInput, Prisma.DashboardUncheckedCreateWithoutEmbedInput>
+  connectOrCreate?: Prisma.DashboardCreateOrConnectWithoutEmbedInput
+  upsert?: Prisma.DashboardUpsertWithoutEmbedInput
+  connect?: Prisma.DashboardWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.DashboardUpdateToOneWithWhereWithoutEmbedInput, Prisma.DashboardUpdateWithoutEmbedInput>, Prisma.DashboardUncheckedUpdateWithoutEmbedInput>
+}
+
 export type DashboardCreateNestedOneWithoutDashboardComponentsInput = {
   create?: Prisma.XOR<Prisma.DashboardCreateWithoutDashboardComponentsInput, Prisma.DashboardUncheckedCreateWithoutDashboardComponentsInput>
   connectOrCreate?: Prisma.DashboardCreateOrConnectWithoutDashboardComponentsInput
@@ -537,12 +584,14 @@ export type DashboardCreateWithoutUserInput = {
   name: string
   description?: string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   folder?: Prisma.FolderCreateNestedOneWithoutDashboardsInput
   dashboardComponents?: Prisma.DashboardComponentCreateNestedManyWithoutDashboardInput
   dashboardFilters?: Prisma.DashboardFilterCreateNestedManyWithoutDashboardInput
+  embed?: Prisma.DashboardEmbedCreateNestedOneWithoutDashboardInput
 }
 
 export type DashboardUncheckedCreateWithoutUserInput = {
@@ -550,12 +599,14 @@ export type DashboardUncheckedCreateWithoutUserInput = {
   name: string
   description?: string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
   folderId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   dashboardComponents?: Prisma.DashboardComponentUncheckedCreateNestedManyWithoutDashboardInput
   dashboardFilters?: Prisma.DashboardFilterUncheckedCreateNestedManyWithoutDashboardInput
+  embed?: Prisma.DashboardEmbedUncheckedCreateNestedOneWithoutDashboardInput
 }
 
 export type DashboardCreateOrConnectWithoutUserInput = {
@@ -592,6 +643,7 @@ export type DashboardScalarWhereInput = {
   name?: Prisma.StringFilter<"Dashboard"> | string
   description?: Prisma.StringNullableFilter<"Dashboard"> | string | null
   configuration?: Prisma.JsonFilter<"Dashboard">
+  status?: Prisma.EnumDashboardStatusFilter<"Dashboard"> | $Enums.DashboardStatus
   userId?: Prisma.StringFilter<"Dashboard"> | string
   folderId?: Prisma.StringNullableFilter<"Dashboard"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Dashboard"> | Date | string
@@ -604,12 +656,14 @@ export type DashboardCreateWithoutFolderInput = {
   name: string
   description?: string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   user: Prisma.UserCreateNestedOneWithoutDashboardsInput
   dashboardComponents?: Prisma.DashboardComponentCreateNestedManyWithoutDashboardInput
   dashboardFilters?: Prisma.DashboardFilterCreateNestedManyWithoutDashboardInput
+  embed?: Prisma.DashboardEmbedCreateNestedOneWithoutDashboardInput
 }
 
 export type DashboardUncheckedCreateWithoutFolderInput = {
@@ -617,12 +671,14 @@ export type DashboardUncheckedCreateWithoutFolderInput = {
   name: string
   description?: string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
   userId: string
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   dashboardComponents?: Prisma.DashboardComponentUncheckedCreateNestedManyWithoutDashboardInput
   dashboardFilters?: Prisma.DashboardFilterUncheckedCreateNestedManyWithoutDashboardInput
+  embed?: Prisma.DashboardEmbedUncheckedCreateNestedOneWithoutDashboardInput
 }
 
 export type DashboardCreateOrConnectWithoutFolderInput = {
@@ -651,17 +707,95 @@ export type DashboardUpdateManyWithWhereWithoutFolderInput = {
   data: Prisma.XOR<Prisma.DashboardUpdateManyMutationInput, Prisma.DashboardUncheckedUpdateManyWithoutFolderInput>
 }
 
+export type DashboardCreateWithoutEmbedInput = {
+  id?: string
+  name: string
+  description?: string | null
+  configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  user: Prisma.UserCreateNestedOneWithoutDashboardsInput
+  folder?: Prisma.FolderCreateNestedOneWithoutDashboardsInput
+  dashboardComponents?: Prisma.DashboardComponentCreateNestedManyWithoutDashboardInput
+  dashboardFilters?: Prisma.DashboardFilterCreateNestedManyWithoutDashboardInput
+}
+
+export type DashboardUncheckedCreateWithoutEmbedInput = {
+  id?: string
+  name: string
+  description?: string | null
+  configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
+  userId: string
+  folderId?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  deletedAt?: Date | string | null
+  dashboardComponents?: Prisma.DashboardComponentUncheckedCreateNestedManyWithoutDashboardInput
+  dashboardFilters?: Prisma.DashboardFilterUncheckedCreateNestedManyWithoutDashboardInput
+}
+
+export type DashboardCreateOrConnectWithoutEmbedInput = {
+  where: Prisma.DashboardWhereUniqueInput
+  create: Prisma.XOR<Prisma.DashboardCreateWithoutEmbedInput, Prisma.DashboardUncheckedCreateWithoutEmbedInput>
+}
+
+export type DashboardUpsertWithoutEmbedInput = {
+  update: Prisma.XOR<Prisma.DashboardUpdateWithoutEmbedInput, Prisma.DashboardUncheckedUpdateWithoutEmbedInput>
+  create: Prisma.XOR<Prisma.DashboardCreateWithoutEmbedInput, Prisma.DashboardUncheckedCreateWithoutEmbedInput>
+  where?: Prisma.DashboardWhereInput
+}
+
+export type DashboardUpdateToOneWithWhereWithoutEmbedInput = {
+  where?: Prisma.DashboardWhereInput
+  data: Prisma.XOR<Prisma.DashboardUpdateWithoutEmbedInput, Prisma.DashboardUncheckedUpdateWithoutEmbedInput>
+}
+
+export type DashboardUpdateWithoutEmbedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  user?: Prisma.UserUpdateOneRequiredWithoutDashboardsNestedInput
+  folder?: Prisma.FolderUpdateOneWithoutDashboardsNestedInput
+  dashboardComponents?: Prisma.DashboardComponentUpdateManyWithoutDashboardNestedInput
+  dashboardFilters?: Prisma.DashboardFilterUpdateManyWithoutDashboardNestedInput
+}
+
+export type DashboardUncheckedUpdateWithoutEmbedInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dashboardComponents?: Prisma.DashboardComponentUncheckedUpdateManyWithoutDashboardNestedInput
+  dashboardFilters?: Prisma.DashboardFilterUncheckedUpdateManyWithoutDashboardNestedInput
+}
+
 export type DashboardCreateWithoutDashboardComponentsInput = {
   id?: string
   name: string
   description?: string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   user: Prisma.UserCreateNestedOneWithoutDashboardsInput
   folder?: Prisma.FolderCreateNestedOneWithoutDashboardsInput
   dashboardFilters?: Prisma.DashboardFilterCreateNestedManyWithoutDashboardInput
+  embed?: Prisma.DashboardEmbedCreateNestedOneWithoutDashboardInput
 }
 
 export type DashboardUncheckedCreateWithoutDashboardComponentsInput = {
@@ -669,12 +803,14 @@ export type DashboardUncheckedCreateWithoutDashboardComponentsInput = {
   name: string
   description?: string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
   userId: string
   folderId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   dashboardFilters?: Prisma.DashboardFilterUncheckedCreateNestedManyWithoutDashboardInput
+  embed?: Prisma.DashboardEmbedUncheckedCreateNestedOneWithoutDashboardInput
 }
 
 export type DashboardCreateOrConnectWithoutDashboardComponentsInput = {
@@ -698,12 +834,14 @@ export type DashboardUpdateWithoutDashboardComponentsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutDashboardsNestedInput
   folder?: Prisma.FolderUpdateOneWithoutDashboardsNestedInput
   dashboardFilters?: Prisma.DashboardFilterUpdateManyWithoutDashboardNestedInput
+  embed?: Prisma.DashboardEmbedUpdateOneWithoutDashboardNestedInput
 }
 
 export type DashboardUncheckedUpdateWithoutDashboardComponentsInput = {
@@ -711,12 +849,14 @@ export type DashboardUncheckedUpdateWithoutDashboardComponentsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dashboardFilters?: Prisma.DashboardFilterUncheckedUpdateManyWithoutDashboardNestedInput
+  embed?: Prisma.DashboardEmbedUncheckedUpdateOneWithoutDashboardNestedInput
 }
 
 export type DashboardCreateWithoutDashboardFiltersInput = {
@@ -724,12 +864,14 @@ export type DashboardCreateWithoutDashboardFiltersInput = {
   name: string
   description?: string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   user: Prisma.UserCreateNestedOneWithoutDashboardsInput
   folder?: Prisma.FolderCreateNestedOneWithoutDashboardsInput
   dashboardComponents?: Prisma.DashboardComponentCreateNestedManyWithoutDashboardInput
+  embed?: Prisma.DashboardEmbedCreateNestedOneWithoutDashboardInput
 }
 
 export type DashboardUncheckedCreateWithoutDashboardFiltersInput = {
@@ -737,12 +879,14 @@ export type DashboardUncheckedCreateWithoutDashboardFiltersInput = {
   name: string
   description?: string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
   userId: string
   folderId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   deletedAt?: Date | string | null
   dashboardComponents?: Prisma.DashboardComponentUncheckedCreateNestedManyWithoutDashboardInput
+  embed?: Prisma.DashboardEmbedUncheckedCreateNestedOneWithoutDashboardInput
 }
 
 export type DashboardCreateOrConnectWithoutDashboardFiltersInput = {
@@ -766,12 +910,14 @@ export type DashboardUpdateWithoutDashboardFiltersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutDashboardsNestedInput
   folder?: Prisma.FolderUpdateOneWithoutDashboardsNestedInput
   dashboardComponents?: Prisma.DashboardComponentUpdateManyWithoutDashboardNestedInput
+  embed?: Prisma.DashboardEmbedUpdateOneWithoutDashboardNestedInput
 }
 
 export type DashboardUncheckedUpdateWithoutDashboardFiltersInput = {
@@ -779,12 +925,14 @@ export type DashboardUncheckedUpdateWithoutDashboardFiltersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dashboardComponents?: Prisma.DashboardComponentUncheckedUpdateManyWithoutDashboardNestedInput
+  embed?: Prisma.DashboardEmbedUncheckedUpdateOneWithoutDashboardNestedInput
 }
 
 export type DashboardCreateManyUserInput = {
@@ -792,6 +940,7 @@ export type DashboardCreateManyUserInput = {
   name: string
   description?: string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
   folderId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -803,12 +952,14 @@ export type DashboardUpdateWithoutUserInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   folder?: Prisma.FolderUpdateOneWithoutDashboardsNestedInput
   dashboardComponents?: Prisma.DashboardComponentUpdateManyWithoutDashboardNestedInput
   dashboardFilters?: Prisma.DashboardFilterUpdateManyWithoutDashboardNestedInput
+  embed?: Prisma.DashboardEmbedUpdateOneWithoutDashboardNestedInput
 }
 
 export type DashboardUncheckedUpdateWithoutUserInput = {
@@ -816,12 +967,14 @@ export type DashboardUncheckedUpdateWithoutUserInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
   folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dashboardComponents?: Prisma.DashboardComponentUncheckedUpdateManyWithoutDashboardNestedInput
   dashboardFilters?: Prisma.DashboardFilterUncheckedUpdateManyWithoutDashboardNestedInput
+  embed?: Prisma.DashboardEmbedUncheckedUpdateOneWithoutDashboardNestedInput
 }
 
 export type DashboardUncheckedUpdateManyWithoutUserInput = {
@@ -829,6 +982,7 @@ export type DashboardUncheckedUpdateManyWithoutUserInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
   folderId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -840,6 +994,7 @@ export type DashboardCreateManyFolderInput = {
   name: string
   description?: string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: $Enums.DashboardStatus
   userId: string
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -851,12 +1006,14 @@ export type DashboardUpdateWithoutFolderInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   user?: Prisma.UserUpdateOneRequiredWithoutDashboardsNestedInput
   dashboardComponents?: Prisma.DashboardComponentUpdateManyWithoutDashboardNestedInput
   dashboardFilters?: Prisma.DashboardFilterUpdateManyWithoutDashboardNestedInput
+  embed?: Prisma.DashboardEmbedUpdateOneWithoutDashboardNestedInput
 }
 
 export type DashboardUncheckedUpdateWithoutFolderInput = {
@@ -864,12 +1021,14 @@ export type DashboardUncheckedUpdateWithoutFolderInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   deletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   dashboardComponents?: Prisma.DashboardComponentUncheckedUpdateManyWithoutDashboardNestedInput
   dashboardFilters?: Prisma.DashboardFilterUncheckedUpdateManyWithoutDashboardNestedInput
+  embed?: Prisma.DashboardEmbedUncheckedUpdateOneWithoutDashboardNestedInput
 }
 
 export type DashboardUncheckedUpdateManyWithoutFolderInput = {
@@ -877,6 +1036,7 @@ export type DashboardUncheckedUpdateManyWithoutFolderInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   configuration?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  status?: Prisma.EnumDashboardStatusFieldUpdateOperationsInput | $Enums.DashboardStatus
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -928,6 +1088,7 @@ export type DashboardSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   name?: boolean
   description?: boolean
   configuration?: boolean
+  status?: boolean
   userId?: boolean
   folderId?: boolean
   createdAt?: boolean
@@ -937,6 +1098,7 @@ export type DashboardSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   folder?: boolean | Prisma.Dashboard$folderArgs<ExtArgs>
   dashboardComponents?: boolean | Prisma.Dashboard$dashboardComponentsArgs<ExtArgs>
   dashboardFilters?: boolean | Prisma.Dashboard$dashboardFiltersArgs<ExtArgs>
+  embed?: boolean | Prisma.Dashboard$embedArgs<ExtArgs>
   _count?: boolean | Prisma.DashboardCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["dashboard"]>
 
@@ -945,6 +1107,7 @@ export type DashboardSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   name?: boolean
   description?: boolean
   configuration?: boolean
+  status?: boolean
   userId?: boolean
   folderId?: boolean
   createdAt?: boolean
@@ -959,6 +1122,7 @@ export type DashboardSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   name?: boolean
   description?: boolean
   configuration?: boolean
+  status?: boolean
   userId?: boolean
   folderId?: boolean
   createdAt?: boolean
@@ -973,6 +1137,7 @@ export type DashboardSelectScalar = {
   name?: boolean
   description?: boolean
   configuration?: boolean
+  status?: boolean
   userId?: boolean
   folderId?: boolean
   createdAt?: boolean
@@ -980,12 +1145,13 @@ export type DashboardSelectScalar = {
   deletedAt?: boolean
 }
 
-export type DashboardOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "configuration" | "userId" | "folderId" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["dashboard"]>
+export type DashboardOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "description" | "configuration" | "status" | "userId" | "folderId" | "createdAt" | "updatedAt" | "deletedAt", ExtArgs["result"]["dashboard"]>
 export type DashboardInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   folder?: boolean | Prisma.Dashboard$folderArgs<ExtArgs>
   dashboardComponents?: boolean | Prisma.Dashboard$dashboardComponentsArgs<ExtArgs>
   dashboardFilters?: boolean | Prisma.Dashboard$dashboardFiltersArgs<ExtArgs>
+  embed?: boolean | Prisma.Dashboard$embedArgs<ExtArgs>
   _count?: boolean | Prisma.DashboardCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type DashboardIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1004,12 +1170,14 @@ export type $DashboardPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     folder: Prisma.$FolderPayload<ExtArgs> | null
     dashboardComponents: Prisma.$DashboardComponentPayload<ExtArgs>[]
     dashboardFilters: Prisma.$DashboardFilterPayload<ExtArgs>[]
+    embed: Prisma.$DashboardEmbedPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     name: string
     description: string | null
     configuration: runtime.JsonValue
+    status: $Enums.DashboardStatus
     userId: string
     folderId: string | null
     createdAt: Date
@@ -1413,6 +1581,7 @@ export interface Prisma__DashboardClient<T, Null = never, ExtArgs extends runtim
   folder<T extends Prisma.Dashboard$folderArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Dashboard$folderArgs<ExtArgs>>): Prisma.Prisma__FolderClient<runtime.Types.Result.GetResult<Prisma.$FolderPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   dashboardComponents<T extends Prisma.Dashboard$dashboardComponentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Dashboard$dashboardComponentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DashboardComponentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   dashboardFilters<T extends Prisma.Dashboard$dashboardFiltersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Dashboard$dashboardFiltersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DashboardFilterPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  embed<T extends Prisma.Dashboard$embedArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Dashboard$embedArgs<ExtArgs>>): Prisma.Prisma__DashboardEmbedClient<runtime.Types.Result.GetResult<Prisma.$DashboardEmbedPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1446,6 +1615,7 @@ export interface DashboardFieldRefs {
   readonly name: Prisma.FieldRef<"Dashboard", 'String'>
   readonly description: Prisma.FieldRef<"Dashboard", 'String'>
   readonly configuration: Prisma.FieldRef<"Dashboard", 'Json'>
+  readonly status: Prisma.FieldRef<"Dashboard", 'DashboardStatus'>
   readonly userId: Prisma.FieldRef<"Dashboard", 'String'>
   readonly folderId: Prisma.FieldRef<"Dashboard", 'String'>
   readonly createdAt: Prisma.FieldRef<"Dashboard", 'DateTime'>
@@ -1916,6 +2086,25 @@ export type Dashboard$dashboardFiltersArgs<ExtArgs extends runtime.Types.Extensi
   take?: number
   skip?: number
   distinct?: Prisma.DashboardFilterScalarFieldEnum | Prisma.DashboardFilterScalarFieldEnum[]
+}
+
+/**
+ * Dashboard.embed
+ */
+export type Dashboard$embedArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DashboardEmbed
+   */
+  select?: Prisma.DashboardEmbedSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DashboardEmbed
+   */
+  omit?: Prisma.DashboardEmbedOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DashboardEmbedInclude<ExtArgs> | null
+  where?: Prisma.DashboardEmbedWhereInput
 }
 
 /**

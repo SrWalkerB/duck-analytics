@@ -4,7 +4,7 @@ export const Route = createFileRoute('/')({
   beforeLoad: () => {
     const token = localStorage.getItem('token')
     if (!token) throw redirect({ to: '/sign-in' })
-    throw redirect({ to: '/dashboards' })
+    throw redirect({ to: '/collection' })
   },
   component: () => null,
 })

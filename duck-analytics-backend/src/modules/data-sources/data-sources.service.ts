@@ -30,6 +30,14 @@ export class DataSourcesService {
     return ds;
   }
 
+  async findOneInternal(id: string) {
+    const ds = await this.prisma.dataSource.findFirst({
+      where: { id, deletedAt: null },
+    });
+    if (!ds) throw new NotFoundException('Data source not found');
+    return ds;
+  }
+
   async create(userId: string, dto: CreateDataSourceDto) {
     const encrypted = this.encryption.encrypt(dto.connectionString);
     return this.prisma.dataSource.create({

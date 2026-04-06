@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { ArrowUp, ArrowDown, ArrowUpDown, Settings2 } from 'lucide-react'
+import { ArrowUp, ArrowDown, ArrowUpDown, Settings2, FileDown, FileSpreadsheet } from 'lucide-react'
 import { flattenRows } from '@/lib/flatten-row'
+import { exportCSV, exportExcel } from '@/lib/export-table'
 import type { QuerySort } from '@/types'
 import {
   Table,
@@ -26,6 +27,9 @@ interface ResultsTableProps {
   onVisibleColumnsChange?: (cols: string[]) => void
   sort?: QuerySort[]
   onSortToggle?: (field: string) => void
+  columnAliases?: Record<string, string>
+  columnOrder?: string[]
+  exportFilename?: string
 }
 
 function formatCell(value: unknown): { text: string; type: 'null' | 'number' | 'boolean' | 'date' | 'text' } {
@@ -57,6 +61,9 @@ export function ResultsTable({
   onVisibleColumnsChange,
   sort,
   onSortToggle,
+  columnAliases,
+  columnOrder,
+  exportFilename,
 }: ResultsTableProps) {
   const flatData = useMemo(() => flattenRows(data), [data])
 
@@ -68,8 +75,15 @@ export function ResultsTable({
         cols.add(key)
       }
     }
-    return Array.from(cols)
-  }, [flatData])
+    const detected = Array.from(cols)
+    // Apply columnOrder if provided
+    if (columnOrder?.length) {
+      const ordered = columnOrder.filter((c) => detected.includes(c))
+      const remaining = detected.filter((c) => !columnOrder.includes(c))
+      return [...ordered, ...remaining]
+    }
+    return detected
+  }, [flatData, columnOrder])
 
   // Local visible columns state (default: all except _id)
   const [localVisible, setLocalVisible] = useState<string[] | null>(null)
@@ -92,6 +106,10 @@ export function ResultsTable({
   const displayCols = effectiveVisible.filter((c) => allColumns.includes(c))
   const rows = flatData.slice(0, 200)
 
+  function colLabel(col: string) {
+    return columnAliases?.[col] || col
+  }
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
       {/* Toolbar */}
@@ -99,30 +117,66 @@ export function ResultsTable({
         <span className="text-xs text-muted-foreground">
           {rows.length} / {flatData.length} linhas · {displayCols.length} colunas
         </span>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-6 gap-1 text-xs">
-              <Settings2 size={12} />
-              Colunas
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="max-h-72 w-56 overflow-y-auto">
-            {allColumns.map((col) => (
-              <div
-                key={col}
-                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-muted"
-                onClick={() => toggleColumn(col)}
-              >
-                <Checkbox
-                  checked={effectiveVisible.includes(col)}
-                  onCheckedChange={() => toggleColumn(col)}
-                  className="size-3.5"
-                />
-                <span className="truncate">{col}</span>
-              </div>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 gap-1 text-xs"
+            title="Exportar CSV"
+            onClick={() =>
+              exportCSV({
+                data: flatData,
+                columns: displayCols,
+                columnAliases,
+                filename: exportFilename,
+              })
+            }
+          >
+            <FileDown size={12} />
+            CSV
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 gap-1 text-xs"
+            title="Exportar Excel"
+            onClick={() =>
+              exportExcel({
+                data: flatData,
+                columns: displayCols,
+                columnAliases,
+                filename: exportFilename,
+              })
+            }
+          >
+            <FileSpreadsheet size={12} />
+            Excel
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-6 gap-1 text-xs">
+                <Settings2 size={12} />
+                Colunas
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-72 w-56 overflow-y-auto">
+              {allColumns.map((col) => (
+                <div
+                  key={col}
+                  className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-muted"
+                  onClick={() => toggleColumn(col)}
+                >
+                  <Checkbox
+                    checked={effectiveVisible.includes(col)}
+                    onCheckedChange={() => toggleColumn(col)}
+                    className="size-3.5"
+                  />
+                  <span className="truncate">{colLabel(col)}</span>
+                </div>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Table */}
@@ -140,7 +194,7 @@ export function ResultsTable({
                   onClick={() => onSortToggle?.(col)}
                 >
                   <span className="flex items-center gap-1">
-                    {col}
+                    {colLabel(col)}
                     {onSortToggle && getSortIcon(col)}
                   </span>
                 </TableHead>

@@ -162,7 +162,7 @@ export function ComponentCard({
             </DropdownMenu>
           )}
 
-          <Button size="icon" variant="ghost" className="h-7 w-7" title="Editar questão" asChild>
+          <Button size="icon" variant="ghost" className="h-7 w-7" title="Editar componente" asChild>
             <Link to="/questions/$id" params={{ id: dc.componentId }}>
               <ExternalLink className="h-3.5 w-3.5" />
             </Link>
@@ -214,6 +214,7 @@ export function ComponentCard({
               type={(dc.component?.type ?? 'TABLE') as ComponentType}
               data={rows}
               configuration={(dc.component?.configuration as Record<string, unknown>) ?? {}}
+              title={displayTitle ?? dc.component?.name ?? 'dados'}
             />
           )}
         </div>

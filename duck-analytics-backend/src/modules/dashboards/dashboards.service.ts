@@ -34,6 +34,7 @@ export class DashboardsService {
             component: { select: { id: true, name: true, type: true } },
           },
         },
+        embed: true,
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -53,10 +54,36 @@ export class DashboardsService {
           },
         },
         dashboardFilters: { orderBy: [{ order: 'asc' }, { createdAt: 'asc' }] },
+        embed: true,
       },
     });
     if (!d) throw new NotFoundException('Dashboard not found');
     return d;
+  }
+
+  async findOneByEmbedCode(embedCode: string) {
+    const embed = await this.prisma.dashboardEmbed.findUnique({
+      where: { embedCode },
+      include: {
+        dashboard: {
+          include: {
+            dashboardComponents: {
+              include: {
+                component: {
+                  include: {
+                    query: { select: { id: true, collection: true, dataSourceId: true } },
+                  },
+                },
+              },
+            },
+            dashboardFilters: { orderBy: [{ order: 'asc' }, { createdAt: 'asc' }] },
+          },
+        },
+      },
+    });
+    if (!embed || embed.dashboard.deletedAt)
+      throw new NotFoundException('Embed not found');
+    return embed;
   }
 
   async create(userId: string, dto: CreateDashboardDto) {
@@ -171,29 +198,112 @@ export class DashboardsService {
     return results.map((r) => r._id).filter((v) => v != null);
   }
 
+  private async translateValuesInternal(
+    filter: { field: string; collection: string; dataSourceId: string },
+    mapping: TargetMapping,
+    selected: unknown[],
+  ): Promise<unknown[]> {
+    if (!mapping.valueField || mapping.valueField === filter.field) {
+      return selected;
+    }
+    const ds = await this.dataSources.findOneInternal(filter.dataSourceId);
+    const db = await this.mongodb.getDb(ds.connectionString, ds.database);
+    const results = await db
+      .collection(filter.collection)
+      .aggregate([
+        { $match: { [filter.field]: { $in: selected } } },
+        { $group: { _id: `$${mapping.valueField}` } },
+      ])
+      .toArray();
+    return results.map((r) => r._id).filter((v) => v != null);
+  }
+
   async getData(
     dashboardId: string,
     userId: string,
     activeFilters: Record<string, unknown[]> = {},
   ) {
     const dashboard = await this.findOne(dashboardId, userId);
+    return this.getDataWithOwner(dashboard, activeFilters, userId);
+  }
+
+  /**
+   * Fetch data for all components in a dashboard without userId checks.
+   * Used by the embed module after access has been validated.
+   */
+  async getDataByDashboard(
+    dashboard: Awaited<ReturnType<DashboardsService['findOne']>>,
+    activeFilters: Record<string, unknown[]> = {},
+  ) {
     const filters = dashboard.dashboardFilters;
     const results: Record<string, unknown> = {};
 
     await Promise.all(
       dashboard.dashboardComponents.map(async (dc) => {
-        // Build injected filters for this component
         const injected: QueryFilter[] = [];
         for (const filter of filters) {
           const selected = activeFilters[filter.id];
           if (!selected || selected.length === 0) continue;
-          const mappings = (filter.targetMappings as unknown as TargetMapping[]) ?? [];
+          const mappings =
+            (filter.targetMappings as unknown as TargetMapping[]) ?? [];
           const mapping = mappings.find(
             (m) => m.componentId === dc.componentId,
           );
           if (!mapping) continue;
 
-          // Translate values if mapping has a different valueField
+          const values = await this.translateValuesInternal(
+            filter,
+            mapping,
+            selected,
+          );
+
+          injected.push({
+            field: mapping.targetField,
+            operator: 'in',
+            value: values,
+            fieldType: mapping.fieldType,
+          });
+        }
+
+        try {
+          results[dc.id] = await this.components.getDataInternal(
+            dc.componentId,
+            injected.length > 0 ? injected : undefined,
+          );
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(
+            `[Dashboard getData] component ${dc.componentId} failed:`,
+            msg,
+          );
+          results[dc.id] = { error: msg };
+        }
+      }),
+    );
+    return results;
+  }
+
+  private async getDataWithOwner(
+    dashboard: Awaited<ReturnType<DashboardsService['findOne']>>,
+    activeFilters: Record<string, unknown[]>,
+    userId: string,
+  ) {
+    const filters = dashboard.dashboardFilters;
+    const results: Record<string, unknown> = {};
+
+    await Promise.all(
+      dashboard.dashboardComponents.map(async (dc) => {
+        const injected: QueryFilter[] = [];
+        for (const filter of filters) {
+          const selected = activeFilters[filter.id];
+          if (!selected || selected.length === 0) continue;
+          const mappings =
+            (filter.targetMappings as unknown as TargetMapping[]) ?? [];
+          const mapping = mappings.find(
+            (m) => m.componentId === dc.componentId,
+          );
+          if (!mapping) continue;
+
           const values = await this.translateValues(
             filter,
             mapping,

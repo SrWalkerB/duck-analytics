@@ -84,7 +84,7 @@ function QuestionsPage() {
           </p>
         </div>
         <Button asChild>
-          <Link to="/questions/new">
+          <Link to="/questions/new" search={{ folderId: undefined }}>
             <Plus size={16} className="mr-1.5" />
             New Question
           </Link>
@@ -104,7 +104,7 @@ function QuestionsPage() {
           <BarChart2 size={40} className="opacity-20" />
           <p className="text-sm">No questions yet</p>
           <Button variant="outline" asChild size="sm">
-            <Link to="/questions/new">Create your first question</Link>
+            <Link to="/questions/new" search={{ folderId: undefined }}>Create your first question</Link>
           </Button>
         </div>
       ) : (

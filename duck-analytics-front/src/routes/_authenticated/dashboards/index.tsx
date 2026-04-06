@@ -32,7 +32,7 @@ function DashboardsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Dashboards</h1>
-        <Link to="/dashboards/new">
+        <Link to="/dashboards/new" search={{ folderId: undefined }}>
           <Button>New Dashboard</Button>
         </Link>
       </div>
@@ -42,7 +42,12 @@ function DashboardsPage() {
           <Card key={d.id}>
             <CardHeader className="flex-row items-center justify-between space-y-0">
               <CardTitle className="text-base">{d.name}</CardTitle>
-              <Badge variant="outline">{d.dashboardComponents?.length ?? 0} components</Badge>
+              <div className="flex items-center gap-1">
+                {d.status === 'PUBLISHED' && (
+                  <Badge variant="default" className="text-xs">Publicado</Badge>
+                )}
+                <Badge variant="outline">{d.dashboardComponents?.length ?? 0} components</Badge>
+              </div>
             </CardHeader>
             <CardContent>
               {d.description && <p className="mb-3 text-sm text-muted-foreground">{d.description}</p>}

@@ -21,6 +21,7 @@ interface Props {
   type: ComponentType
   data: Record<string, unknown>[]
   configuration: Record<string, unknown>
+  title?: string
 }
 
 const DEFAULT_COLORS = [
@@ -72,7 +73,7 @@ function formatPieLabelValue(
   return `${((numeric / total) * 100).toFixed(0)}%`
 }
 
-export function ChartRenderer({ type, data, configuration }: Props) {
+export function ChartRenderer({ type, data, configuration, title }: Props) {
   if (!data || data.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -136,7 +137,16 @@ export function ChartRenderer({ type, data, configuration }: Props) {
   }
 
   if (type === 'TABLE') {
-    return <ResultsTable data={data} />
+    const columnAliases = (configuration['columnAliases'] as Record<string, string>) ?? undefined
+    const columnOrder = (configuration['columnOrder'] as string[]) ?? undefined
+    return (
+      <ResultsTable
+        data={data}
+        columnAliases={columnAliases}
+        columnOrder={columnOrder}
+        exportFilename={title}
+      />
+    )
   }
 
   const xAxisLabel = showXLabel && display.xAxisLabel ? display.xAxisLabel : undefined

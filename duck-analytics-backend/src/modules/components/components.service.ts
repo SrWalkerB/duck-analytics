@@ -37,6 +37,7 @@ export class ComponentsService {
         queryId: dto.queryId,
         configuration: dto.configuration as object,
         userId,
+        folderId: dto.folderId,
       },
     });
   }
@@ -51,6 +52,7 @@ export class ComponentsService {
         ...(dto.configuration !== undefined && {
           configuration: dto.configuration as object,
         }),
+        ...(dto.folderId !== undefined && { folderId: dto.folderId }),
       },
     });
   }
@@ -95,6 +97,15 @@ export class ComponentsService {
   async getData(id: string, userId: string, injectedFilters?: QueryFilter[]) {
     const component = await this.findOne(id, userId);
     return this.queries.execute(component.queryId, userId, injectedFilters);
+  }
+
+  async getDataInternal(id: string, injectedFilters?: QueryFilter[]) {
+    const c = await this.prisma.component.findFirst({
+      where: { id, deletedAt: null },
+      include: { query: true },
+    });
+    if (!c) throw new NotFoundException('Component not found');
+    return this.queries.executeInternal(c.queryId, injectedFilters);
   }
 
   async getOutputFields(id: string, userId: string) {

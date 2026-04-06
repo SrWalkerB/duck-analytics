@@ -6,6 +6,7 @@ export const createComponentSchema = z.object({
   type: z.nativeEnum(ComponentType).default(ComponentType.TABLE),
   queryId: z.string(),
   configuration: z.record(z.string(), z.unknown()).default({}),
+  folderId: z.string().optional(),
 });
 
 export type CreateComponentDto = z.infer<typeof createComponentSchema>;

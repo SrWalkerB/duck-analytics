@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './lib/prisma/prisma.module';
+import { LogsModule } from './lib/logs/logs.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { DataSourcesModule } from './modules/data-sources/data-sources.module';
 import { QueriesModule } from './modules/queries/queries.module';
@@ -10,6 +11,8 @@ import { DashboardsModule } from './modules/dashboards/dashboards.module';
 import { FiltersModule } from './modules/filters/filters.module';
 import { FoldersModule } from './modules/folders/folders.module';
 import { AIModule } from './modules/ai/ai.module';
+import { EmbedModule } from './modules/embed/embed.module';
+import { LogsControllerModule } from './modules/logs/logs.module';
 import { env } from './env';
 
 @Module({
@@ -21,6 +24,7 @@ import { env } from './env';
       },
     ]),
     PrismaModule,
+    LogsModule,
     AuthModule,
     DataSourcesModule,
     QueriesModule,
@@ -29,6 +33,8 @@ import { env } from './env';
     FiltersModule,
     FoldersModule,
     AIModule,
+    EmbedModule,
+    LogsControllerModule,
   ],
   providers: [
     {
