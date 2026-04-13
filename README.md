@@ -1,55 +1,205 @@
-# Duck Analytics
+<div align="center">
 
-Plataforma de **analytics** com **dashboards** e **questions** (queries visuais) sobre dados em **MongoDB**, com metadados e usuários em **PostgreSQL**. Monorepo com API **NestJS** e SPA **React (Vite)**.
+# 🦆 Duck Analytics
 
----
+**An open-source analytics platform for MongoDB.**
+Build dashboards, explore data visually, and share insights — without writing a single aggregation pipeline.
 
-## Visão geral da arquitetura
+[![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev/)
+[![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Native_Driver-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-| Camada | Pasta | Papel |
-|--------|--------|--------|
-| **Frontend** | `duck-analytics-front/` | UI: dashboards com grid arrastável/redimensionável, editor de queries, gráficos, autenticação JWT |
-| **Backend** | `duck-analytics-backend/` | API REST `/v1/*`, Prisma + PostgreSQL, conexões MongoDB por data source, compilação de queries em aggregation pipelines |
-| **Banco app** | Docker (`docker-compose.yaml`) | PostgreSQL 18 para dados internos (usuários, dashboards, queries, etc.) |
-| **Dados analisados** | MongoDB (externo) | Informado pelo usuário ao cadastrar **Data Sources**; string de conexão cifrada no PostgreSQL |
-
----
-
-## Pré-requisitos
-
-- **Node.js** (recomendado: LTS atual) — use **npm** ou **pnpm** conforme sua preferência
-- **Docker** + **Docker Compose** (para PostgreSQL)
-- **MongoDB** acessível (local ou remoto) para conectar como data source pela aplicação
+</div>
 
 ---
 
-## Início rápido
+## 📖 Table of Contents
 
-### 1. Subir o PostgreSQL
+- [About](#-about)
+- [Features](#-features)
+- [What Makes Duck Analytics Different](#-what-makes-duck-analytics-different)
+- [Architecture](#-architecture)
+- [Tech Stack](#-tech-stack)
+- [Getting Started](#-getting-started)
+- [Configuration](#-configuration)
+- [Production Deployment](#-production-deployment)
+- [Typical Usage Flow](#-typical-usage-flow)
+- [Repository Structure](#-repository-structure)
+- [Scripts Reference](#-scripts-reference)
+- [Roadmap](#-roadmap)
+- [Contributing](#-contributing)
+- [License](#-license)
 
-Na raiz do repositório `duck-analytics/`:
+---
+
+## 🎯 About
+
+**Duck Analytics** is a self-hosted, Metabase-inspired analytics platform built **natively for MongoDB**. It lets teams connect to one or more MongoDB clusters, build **Questions** (visual queries) without writing aggregation pipelines by hand, and compose them into **interactive dashboards** with drag-and-resize widgets.
+
+Application metadata (users, dashboards, queries, data sources) lives in **PostgreSQL**, while the actual business data stays in **your own MongoDB**. Connection strings are encrypted at rest with **AES-256-GCM** and never leave your infrastructure.
+
+> Think of it as "Metabase for MongoDB" — focused, modern, and shipped as a single Docker container.
+
+---
+
+## ✨ Features
+
+### 📊 Dashboards
+- Drag, drop, and resize widgets on a responsive grid layout
+- Mix multiple chart types on the same board
+- Persistent layouts — saved per user and dashboard
+
+### 🔎 Visual Query Builder (Questions)
+- Build aggregation pipelines without writing MongoDB syntax
+- Composable stages: `$match → $group → $sort → $limit → $project`
+- Live preview of the compiled pipeline and results
+- Collection/field introspection from your MongoDB data sources
+
+### 📈 Chart Types
+- **Table** — raw tabular view
+- **Bar Chart**
+- **Line Chart**
+- **Pie Chart**
+- **KPI** (single-value cards)
+
+### 🔐 Security & Multi-tenancy
+- JWT authentication with Passport
+- Per-user data isolation on all `/v1/*` routes
+- **AES-256-GCM encryption** for connection strings and secrets
+- Strict runtime env validation with Zod — the app refuses to start with bad config
+
+### 🗄️ Data Sources
+- Register multiple MongoDB connections per user
+- Automatic schema introspection (collections, fields, types)
+- Connection pooling handled transparently by the backend
+
+### 🎨 Polished UI
+- Built on **shadcn/ui (nova preset)** + **Tailwind CSS v4**
+- Light/dark theme out of the box
+- File-based routing with **TanStack Router** and cached data fetching with **TanStack Query**
+
+### 🧪 Observability
+- System logs model for auditing user actions
+- Structured dashboard & component models for clean extension
+
+---
+
+## 🧠 What Makes Duck Analytics Different
+
+| | Duck Analytics | Typical BI Tools |
+|---|---|---|
+| **Native to MongoDB** | ✅ First-class aggregation pipeline compiler | ⚠️ Usually SQL-first, Mongo via connectors |
+| **Visual pipeline builder** | ✅ No `$match`/`$group` syntax required | ❌ Often requires raw query language |
+| **Single-container deployment** | ✅ Frontend + backend + Nginx in one image | ❌ Multi-service deployments |
+| **Encrypted connection storage** | ✅ AES-256-GCM at rest | ⚠️ Plaintext or external vault required |
+| **Runtime-validated config** | ✅ Zod-validated env — fail fast | ❌ Silent misconfiguration |
+| **Modern stack** | ✅ NestJS 11, React 19, Prisma 7, Vite 8 | ⚠️ Often legacy stacks |
+| **Self-hostable & open source** | ✅ MIT, your data stays put | ⚠️ Often SaaS-only |
+
+---
+
+## 🏗 Architecture
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│                         Browser (SPA)                          │
+│          React 19 · Vite · TanStack Router & Query             │
+└────────────────────────────┬───────────────────────────────────┘
+                             │ HTTPS
+                             ▼
+┌────────────────────────────────────────────────────────────────┐
+│                   Nginx (reverse proxy)                        │
+│         /v1/*  ──►  NestJS API     /*  ──►  static SPA         │
+└──────────────┬───────────────────────────┬─────────────────────┘
+               │                           │
+               ▼                           ▼
+┌──────────────────────────┐   ┌─────────────────────────────────┐
+│     NestJS Backend       │   │       PostgreSQL (metadata)     │
+│  · JWT auth              │──►│  users · dashboards · queries   │
+│  · QueryBuilderService   │   │  data_sources (AES-GCM cipher)  │
+│  · MongodbService        │   └─────────────────────────────────┘
+└──────────────┬───────────┘
+               │ encrypted connection strings
+               ▼
+┌────────────────────────────────────────────────────────────────┐
+│                 MongoDB (your business data)                   │
+│           queried via compiled aggregation pipelines           │
+└────────────────────────────────────────────────────────────────┘
+```
+
+| Layer | Folder | Role |
+|---|---|---|
+| **Frontend** | `duck-analytics-front/` | SPA: dashboards, query builder, charts, auth |
+| **Backend** | `duck-analytics-backend/` | REST API `/v1/*`, Prisma, MongoDB driver, pipeline compiler |
+| **App DB** | `docker-compose.yaml` | PostgreSQL 18 for internal metadata |
+| **Analyzed data** | External MongoDB | Registered per user as a *Data Source* |
+
+---
+
+## 🛠 Tech Stack
+
+### Backend
+- **NestJS 11** · **TypeScript** · **SWC** compiler
+- **Prisma 7** with `prisma-client` generator + `@prisma/adapter-pg`
+- **PostgreSQL 18** for metadata
+- **MongoDB native driver** for introspection & aggregations
+- **JWT + Passport** for auth
+- **Zod** for env and DTO validation
+- **AES-256-GCM** via Node `crypto`
+
+### Frontend
+- **React 19** · **Vite 8** · **TypeScript**
+- **TanStack Router** (file-based) + **TanStack Query**
+- **shadcn/ui** (Radix) with the **nova** preset
+- **Tailwind CSS v4**
+- **recharts** for charts
+- **react-grid-layout v2** for dashboard grid
+- **Axios** + **next-themes**
+
+### Infrastructure
+- **Docker** multi-stage build
+- **Nginx** as SPA server + reverse proxy
+- **Supervisord** for in-container process management
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Node.js** (current LTS recommended) with `npm` or `pnpm`
+- **Docker** + **Docker Compose**
+- A **MongoDB** instance (local or remote) to register as a data source
+
+### 1. Start PostgreSQL
+
+From the repository root:
 
 ```bash
 docker compose up -d
 ```
 
-Por padrão o Postgres expõe a porta **`5671`** no host (mapeada para `5432` no container). Usuário/senha/DB estão em `docker-compose.yaml`.
+Postgres is exposed on host port **`5671`** (mapped to `5432` in the container). Credentials live in `docker-compose.yaml`.
 
-### 2. Backend
+### 2. Run the Backend
 
 ```bash
 cd duck-analytics-backend
 cp .env.example .env
-# Ajuste JWT_SECRET e ENCRYPTION_KEY (64 caracteres hex = 32 bytes)
+# Set JWT_SECRET and ENCRYPTION_KEY (must be 64 hex chars = 32 bytes)
 npm install
 npx prisma generate
 npx prisma migrate dev
 npm run start:dev
 ```
 
-A API sobe em **`http://localhost:3000`** (ou a porta definida em `PORT` no `.env`).
+API available at **`http://localhost:3000`**.
 
-### 3. Frontend
+### 3. Run the Frontend
 
 ```bash
 cd duck-analytics-front
@@ -58,161 +208,197 @@ npm install
 npm run dev
 ```
 
-O Vite sobe em **`http://localhost:5173`**. A URL da API vem de `VITE_API_URL` (padrão: `http://localhost:3000`).
+App available at **`http://localhost:5173`**.
 
 ---
 
-## Variáveis de ambiente
+## ⚙️ Configuration
 
 ### Backend (`duck-analytics-backend/.env`)
 
-Validadas em runtime por `src/env.ts`. Obrigatórias:
+Validated at runtime in `src/env.ts`. The process refuses to start if any required variable is missing or malformed.
 
-| Variável | Descrição |
-|----------|-----------|
-| `DATABASE_URL` | Connection string PostgreSQL (ex.: alinhada ao `docker-compose`) |
-| `JWT_SECRET` | Segredo para assinatura JWT |
-| `ENCRYPTION_KEY` | **Exatamente 64 caracteres hex** — AES-256-GCM para cifrar connection strings e chaves sensíveis |
-| `PORT` | Porta HTTP (padrão `3000`) |
+| Variable | Required | Description |
+|---|:---:|---|
+| `DATABASE_URL` | ✅ | PostgreSQL connection string |
+| `JWT_SECRET` | ✅ | Secret used to sign JWTs |
+| `ENCRYPTION_KEY` | ✅ | **Exactly 64 hex chars** — AES-256-GCM master key |
+| `PORT` | ✅ | HTTP port (default `3000`) |
 
-Veja o modelo em `duck-analytics-backend/.env.example`.
+Generate a secure encryption key:
+
+```bash
+openssl rand -hex 32
+```
 
 ### Frontend (`duck-analytics-front/.env`)
 
-| Variável | Descrição |
-|----------|-----------|
-| `VITE_API_URL` | Base URL da API (ex.: `http://localhost:3000`) |
-
-Veja `duck-analytics-front/.env.example`.
+| Variable | Description |
+|---|---|
+| `VITE_API_URL` | Base URL of the API (default `http://localhost:3000`) |
 
 ---
 
-## Produção com Docker
+## 📦 Production Deployment
 
-O deploy de produção empacota **frontend + backend + Nginx** em um único container, estilo Metabase. Basta expor uma porta e acessar.
+Duck Analytics ships as a **single all-in-one Docker image** bundling the frontend, backend, and Nginx — Metabase-style. Expose one port and you're done.
 
-### Início rápido
+### Quick Start
 
 ```bash
-# 1. Configure as variáveis de ambiente
+# 1. Configure environment variables
 cp .env.production.example .env
-# Edite o .env — troque JWT_SECRET, ENCRYPTION_KEY e POSTGRES_PASSWORD
+# Edit .env — set JWT_SECRET, ENCRYPTION_KEY and POSTGRES_PASSWORD
 
-# 2. Suba tudo
+# 2. Start everything
 docker compose -f docker-compose.prod.yml up -d
 
-# 3. Acesse
+# 3. Open the app
 # http://localhost:3000
 ```
 
-### Variáveis de ambiente (produção)
+### Production Environment Variables
 
-Definidas no `.env` da raiz (lido pelo `docker-compose.prod.yml`):
+Defined in the root `.env`, consumed by `docker-compose.prod.yml`:
 
-| Variável | Obrigatória | Descrição |
-|----------|:-----------:|-----------|
-| `JWT_SECRET` | Sim | Segredo para assinatura JWT. **Troque o valor padrão!** |
-| `ENCRYPTION_KEY` | Sim | 64 caracteres hex (32 bytes) para AES-256-GCM. Gere com `openssl rand -hex 32` |
-| `POSTGRES_PASSWORD` | Não | Senha do PostgreSQL (padrão: `duck`) |
-| `PORT` | Não | Porta exposta no host (padrão: `3000`) |
+| Variable | Required | Description |
+|---|:---:|---|
+| `JWT_SECRET` | ✅ | JWT signing secret — **never leave the default** |
+| `ENCRYPTION_KEY` | ✅ | 64 hex chars (32 bytes) for AES-256-GCM. Generate with `openssl rand -hex 32` |
+| `POSTGRES_PASSWORD` | ⚪ | PostgreSQL password (default: `duck`) |
+| `PORT` | ⚪ | Host port to expose (default: `3000`) |
 
-> Veja o modelo completo em [`.env.production.example`](.env.production.example).
+See [`.env.production.example`](.env.production.example) for the full template.
 
-### Como funciona
+### How the Container Works
 
 ```
-Usuário :3000 ──► Nginx (container app)
-                    ├── /v1/*   ──► Node.js :3001 (backend NestJS)
-                    └── /*      ──► arquivos estáticos (frontend React)
+User :3000 ──► Nginx (app container)
+                 ├── /v1/*   ──► Node.js :3001 (NestJS backend)
+                 └── /*      ──► static files (React frontend)
 
-                  PostgreSQL :5432 (container db)
+               PostgreSQL :5432 (db container, volume: pgdata)
 ```
 
-- **Nginx** serve o frontend estático e faz proxy reverso de `/v1/*` para o backend
-- **Supervisord** gerencia Nginx e Node.js dentro do container
-- **Migrations** rodam automaticamente no startup (`prisma migrate deploy`)
-- **Dados do Postgres** ficam em um volume Docker (`pgdata`), persistindo entre restarts
+- **Nginx** serves the frontend bundle and reverse-proxies `/v1/*` to the backend
+- **Supervisord** supervises Nginx + Node.js inside the same container
+- **Migrations** run automatically on startup (`prisma migrate deploy`)
+- **Postgres data** persists in a named Docker volume (`pgdata`)
 
-### Comandos úteis
+### Operational Commands
 
 ```bash
-# Ver logs em tempo real
+# Tail logs
 docker compose -f docker-compose.prod.yml logs -f app
 
-# Rebuild após mudanças no código
+# Rebuild after code changes
 docker compose -f docker-compose.prod.yml up -d --build
 
-# Parar tudo
+# Stop everything
 docker compose -f docker-compose.prod.yml down
 
-# Parar e apagar dados do banco (cuidado!)
+# Stop AND wipe database volume (destructive!)
 docker compose -f docker-compose.prod.yml down -v
 ```
 
+### Production Checklist
+
+- [ ] Rotate `JWT_SECRET` to a strong random value
+- [ ] Generate a fresh `ENCRYPTION_KEY` (`openssl rand -hex 32`) — **back it up**, losing it means losing access to every stored data-source credential
+- [ ] Change `POSTGRES_PASSWORD`
+- [ ] Put a TLS-terminating proxy (Caddy, Traefik, Cloudflare, etc.) in front of port `3000`
+- [ ] Schedule backups of the `pgdata` volume
+- [ ] Restrict network access from the container to only the MongoDB clusters you intend to analyze
+
 ---
 
-## Estrutura do repositório
+## 🔄 Typical Usage Flow
+
+1. **Sign up / Sign in** at `/sign-up` or `/sign-in`
+2. **Register a Data Source** pointing to your MongoDB cluster
+3. **Create Questions** — visual queries over your collections
+4. **Build Dashboards** — arrange questions as resizable widgets
+5. **Share & iterate** — refine queries and layouts over time
+
+---
+
+## 🗂 Repository Structure
 
 ```
 duck-analytics/
-├── docker-compose.yaml          # PostgreSQL para desenvolvimento
-├── docker-compose.prod.yml      # Produção: app + PostgreSQL (tudo-em-um)
+├── docker-compose.yaml          # Dev PostgreSQL
+├── docker-compose.prod.yml      # Prod: app + PostgreSQL (all-in-one)
 ├── Dockerfile                   # Multi-stage build (frontend + backend + nginx)
-├── docker/                      # Configs do container de produção
-│   ├── nginx.conf               # Proxy reverso + SPA
-│   ├── supervisord.conf         # Gerencia nginx + node
+├── docker/                      # Production container configs
+│   ├── nginx.conf               # Reverse proxy + SPA fallback
+│   ├── supervisord.conf         # Manages nginx + node
 │   └── entrypoint.sh            # Migrations + startup
-├── .env.production.example      # Modelo de variáveis para produção
+├── .env.production.example      # Production env template
 ├── duck-analytics-backend/      # NestJS + Prisma 7 + MongoDB driver
-├── duck-analytics-front/        # Vite + React + TanStack Router/Query + shadcn/ui
-├── FUTURE_FEATURES.md           # Ideias / roadmap informal
-└── README.md                    # Este arquivo
+├── duck-analytics-front/        # Vite + React + TanStack + shadcn/ui
+├── FUTURE_FEATURES.md           # Informal roadmap
+└── README.md
 ```
 
-Documentação extra por pacote:
+Per-package documentation:
 
 - **Backend:** `duck-analytics-backend/AGENTS.md`, `duck-analytics-backend/CLAUDE.md`
 - **Frontend:** `duck-analytics-front/AGENTS.md`, `duck-analytics-front/CLAUDE.md`
 
 ---
 
-## Stack principal
+## 🧾 Scripts Reference
 
-### Backend
-
-- **NestJS 11**, **Prisma 7** (client gerado em `src/generated/prisma/`), **PostgreSQL**
-- **MongoDB** (driver nativo) para introspectar coleções e executar agregações
-- **JWT + Passport** para autenticação; rotas autenticadas sob `/v1/`
-- **Zod** para validação de `env` e DTOs (padrão do projeto)
-
-### Frontend
-
-- **React 19**, **Vite 8**, **TypeScript**
-- **TanStack Router** (rotas em arquivo) + **TanStack Query**
-- **shadcn/ui** (Radix) + **Tailwind CSS v4**
-- **recharts** para gráficos; **react-grid-layout v2** para layout dos widgets no dashboard
-- **Axios** (`src/services/api.ts`) com Bearer token; **next-themes** para tema claro/escuro
-
----
-
-## Scripts úteis
-
-| Onde | Comando | Uso |
-|------|---------|-----|
-| Backend | `npm run start:dev` | Desenvolvimento com watch |
-| Backend | `npm run build` / `node dist/main.js` | Build e execução em produção |
-| Backend | `npx prisma migrate dev` | Migrações locais |
-| Backend | `npx prisma generate` | Regenerar client após mudar `schema.prisma` |
-| Frontend | `npm run dev` | Dev server |
-| Frontend | `npm run build` | Build de produção (`dist/`) |
+| Package | Command | Purpose |
+|---|---|---|
+| Backend | `npm run start:dev` | Dev server with watch |
+| Backend | `npm run build` | Compile with SWC → `dist/` |
+| Backend | `node dist/main.js` | Run compiled output |
+| Backend | `npx prisma generate` | Regenerate Prisma client |
+| Backend | `npx prisma migrate dev` | Create/apply a migration |
+| Backend | `npx prisma migrate deploy` | Apply migrations (production) |
+| Backend | `npm run lint` | ESLint with auto-fix |
+| Backend | `npm test` / `npm run test:e2e` | Unit / E2E tests |
+| Frontend | `npm run dev` | Vite dev server (`:5173`) |
+| Frontend | `npm run build` | Production build |
+| Frontend | `npm run preview` | Preview production build |
+| Frontend | `npm run lint` | ESLint |
 
 ---
 
-## Fluxo típico de uso
+## 🛣 Roadmap
 
-1. Criar conta / entrar (`/sign-up`, `/sign-in`).
-2. Cadastrar **Data Sources** apontando para um MongoDB.
-3. Criar **Questions** (queries visuais) e componentes de visualização.
-4. Montar **Dashboards** com widgets redimensionáveis.
+See [`FUTURE_FEATURES.md`](FUTURE_FEATURES.md) for the informal roadmap. High-level directions:
+
+- Dashboard sharing & public links
+- Scheduled report delivery
+- More chart types (area, scatter, heatmap)
+- Query parameters & dashboard filters
+- Role-based access control
 
 ---
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome.
+
+1. Fork the repo
+2. Create a branch: `git checkout -b feat/my-feature`
+3. Commit your changes
+4. Open a Pull Request
+
+Please read each package's `CLAUDE.md` / `AGENTS.md` before proposing architectural changes — they document the conventions that keep the codebase coherent.
+
+---
+
+## 📄 License
+
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for details.
+
+---
+
+<div align="center">
+
+**Built with 🦆 for developers who love MongoDB.**
+
+</div>
