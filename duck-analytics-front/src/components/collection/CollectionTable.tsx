@@ -12,6 +12,7 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core'
 import {
+  Activity,
   Folder,
   LayoutDashboard,
   Table2,
@@ -47,6 +48,8 @@ const componentTypeIcons: Record<ComponentType, React.ElementType> = {
   LINE_CHART: LineChart,
   PIE_CHART: PieChart,
   KPI: Gauge,
+  PROGRESS_BAR: Activity,
+  GAUGE: Gauge,
 }
 
 function getItemIcon(item: CollectionItem) {

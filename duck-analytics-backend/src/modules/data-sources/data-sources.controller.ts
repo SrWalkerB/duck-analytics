@@ -36,11 +36,12 @@ export class DataSourcesController {
 
   @Post('test-connection')
   testRawConnection(@Body() dto: object) {
-    const { connectionString, database } = dto as {
+    const { connectionString, database, type } = (dto ?? {}) as {
       connectionString: string;
       database: string;
+      type?: string;
     };
-    return this.service.testRawConnection(connectionString, database);
+    return this.service.testRawConnection(connectionString, database, type);
   }
 
   @Put(':id')
@@ -63,7 +64,7 @@ export class DataSourcesController {
     @CurrentUser() userId: string,
     @Body() dto: object,
   ) {
-    const { connectionString, database } = dto as {
+    const { connectionString, database } = (dto ?? {}) as {
       connectionString?: string;
       database?: string;
     };

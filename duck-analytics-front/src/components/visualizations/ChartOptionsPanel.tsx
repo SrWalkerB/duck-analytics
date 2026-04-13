@@ -30,7 +30,7 @@ interface Props {
   type: ComponentType
   data: Record<string, unknown>[]
   xField?: string
-  yField?: string
+  yFields?: string[]
   config: ChartDisplayConfig
   onChange: (config: ChartDisplayConfig) => void
 }
@@ -51,7 +51,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-export function ChartOptionsPanel({ type, data, xField, config, onChange }: Props) {
+export function ChartOptionsPanel({ type, data, xField, yFields, config, onChange }: Props) {
   const update = (patch: Partial<ChartDisplayConfig>) => onChange({ ...config, ...patch })
   const colors = config.colors?.length ? config.colors : DEFAULT_COLORS
 
@@ -76,7 +76,26 @@ export function ChartOptionsPanel({ type, data, xField, config, onChange }: Prop
 
         {/* Colors */}
         <Section title="Cores">
-          {(type === 'BAR_CHART' || type === 'LINE_CHART' || type === 'KPI') && (
+          {(type === 'BAR_CHART' || type === 'LINE_CHART') && yFields && yFields.length > 1 ? (
+            <div className="space-y-2">
+              {yFields.map((field, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Label className="flex-1 truncate text-xs" title={field}>{field}</Label>
+                  <input
+                    type="color"
+                    value={colors[i] ?? DEFAULT_COLORS[i % DEFAULT_COLORS.length]}
+                    onChange={(e) => {
+                      const next = [...colors]
+                      while (next.length <= i) next.push(DEFAULT_COLORS[next.length % DEFAULT_COLORS.length]!)
+                      next[i] = e.target.value
+                      update({ colors: next })
+                    }}
+                    className="h-7 w-12 cursor-pointer rounded border border-border bg-transparent p-0.5"
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (type === 'BAR_CHART' || type === 'LINE_CHART' || type === 'KPI' || type === 'PROGRESS_BAR' || type === 'GAUGE') ? (
             <div className="flex items-center justify-between">
               <Label className="text-xs">Cor principal</Label>
               <input
@@ -90,7 +109,7 @@ export function ChartOptionsPanel({ type, data, xField, config, onChange }: Prop
                 className="h-7 w-12 cursor-pointer rounded border border-border bg-transparent p-0.5"
               />
             </div>
-          )}
+          ) : null}
 
           {showPieOptions && (
             <>
@@ -254,6 +273,125 @@ export function ChartOptionsPanel({ type, data, xField, config, onChange }: Prop
           </Section>
         )}
 
+        {/* PROGRESS_BAR */}
+        {type === 'PROGRESS_BAR' && (
+          <Section title="Barra de progresso">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="show-values" className="cursor-pointer text-xs">
+                Mostrar valores (atual / meta)
+              </Label>
+              <Switch
+                id="show-values"
+                checked={config.showValues !== false}
+                onCheckedChange={(v) => update({ showValues: v })}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="show-percentage" className="cursor-pointer text-xs">
+                Mostrar porcentagem
+              </Label>
+              <Switch
+                id="show-percentage"
+                checked={config.showPercentage !== false}
+                onCheckedChange={(v) => update({ showPercentage: v })}
+              />
+            </div>
+
+            {config.showPercentage !== false && (
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Label da porcentagem</Label>
+                <Input
+                  className="h-7 text-xs"
+                  value={config.percentageLabel ?? ''}
+                  onChange={(e) => update({ percentageLabel: e.target.value || undefined })}
+                  placeholder="Atingimento percentual"
+                />
+              </div>
+            )}
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="title-bold" className="cursor-pointer text-xs">
+                Título em negrito
+              </Label>
+              <Switch
+                id="title-bold"
+                checked={config.titleBold !== false}
+                onCheckedChange={(v) => update({ titleBold: v })}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-muted-foreground">Tamanho da fonte do label</Label>
+                <span className="text-xs text-muted-foreground">{config.labelFontSize ?? 14}px</span>
+              </div>
+              <input
+                type="range"
+                min={10}
+                max={48}
+                step={1}
+                value={config.labelFontSize ?? 14}
+                onChange={(e) => update({ labelFontSize: Number(e.target.value) })}
+                className="w-full accent-primary"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-muted-foreground">Altura da barra</Label>
+                <span className="text-xs text-muted-foreground">{config.barHeight ?? 8}px</span>
+              </div>
+              <input
+                type="range"
+                min={4}
+                max={32}
+                step={2}
+                value={config.barHeight ?? 8}
+                onChange={(e) => update({ barHeight: Number(e.target.value) })}
+                className="w-full accent-primary"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Cor de fundo da barra</Label>
+              <input
+                type="color"
+                value={config.barBackgroundColor ?? '#e5e7eb'}
+                onChange={(e) => update({ barBackgroundColor: e.target.value })}
+                className="h-7 w-12 cursor-pointer rounded border border-border bg-transparent p-0.5"
+              />
+            </div>
+          </Section>
+        )}
+
+        {/* GAUGE */}
+        {type === 'GAUGE' && (
+          <Section title="Gauge">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="show-gauge-value" className="cursor-pointer text-xs">
+                Exibir valor no centro
+              </Label>
+              <Switch
+                id="show-gauge-value"
+                checked={config.showGaugeValue !== false}
+                onCheckedChange={(v) => update({ showGaugeValue: v })}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Valor mínimo</Label>
+              <Input
+                className="h-7 text-xs"
+                type="number"
+                value={config.gaugeMin ?? 0}
+                onChange={(e) => update({ gaugeMin: Number(e.target.value) || 0 })}
+                placeholder="0"
+              />
+            </div>
+          </Section>
+        )}
+
         {/* Display */}
         <Section title="Exibição">
           {showAxes && (
@@ -286,17 +424,78 @@ export function ChartOptionsPanel({ type, data, xField, config, onChange }: Prop
             </div>
           )}
 
-          {showDataLabelsOption && (
+          {type === 'BAR_CHART' && (
             <div className="flex items-center justify-between">
-              <Label htmlFor="show-data-labels" className="cursor-pointer text-xs">
-                Labels de dados
+              <Label htmlFor="bar-horizontal" className="cursor-pointer text-xs">
+                Barras horizontais
               </Label>
               <Switch
-                id="show-data-labels"
-                checked={config.showDataLabels === true}
-                onCheckedChange={(v) => update({ showDataLabels: v })}
+                id="bar-horizontal"
+                checked={config.barLayout === 'horizontal'}
+                onCheckedChange={(v) => update({ barLayout: v ? 'horizontal' : 'vertical' })}
               />
             </div>
+          )}
+
+          {showDataLabelsOption && (
+            <>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="show-data-labels" className="cursor-pointer text-xs">
+                  Labels de dados
+                </Label>
+                <Switch
+                  id="show-data-labels"
+                  checked={config.showDataLabels === true}
+                  onCheckedChange={(v) => update({ showDataLabels: v })}
+                />
+              </div>
+              {config.showDataLabels === true && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Tamanho labels</Label>
+                    <span className="text-xs text-muted-foreground">{config.dataLabelFontSize ?? 10}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={8}
+                    max={24}
+                    step={1}
+                    value={config.dataLabelFontSize ?? 10}
+                    onChange={(e) => update({ dataLabelFontSize: Number(e.target.value) })}
+                    className="w-full accent-primary"
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          {showAxes && (
+            <>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">Tamanho fonte eixos</Label>
+                  <span className="text-xs text-muted-foreground">{config.tickFontSize ?? 11}px</span>
+                </div>
+                <input
+                  type="range"
+                  min={8}
+                  max={24}
+                  step={1}
+                  value={config.tickFontSize ?? 11}
+                  onChange={(e) => update({ tickFontSize: Number(e.target.value) })}
+                  className="w-full accent-primary"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-xs">Cor da fonte</Label>
+                <input
+                  type="color"
+                  value={config.fontColor ?? '#888888'}
+                  onChange={(e) => update({ fontColor: e.target.value })}
+                  className="h-7 w-12 cursor-pointer rounded border border-border bg-transparent p-0.5"
+                />
+              </div>
+            </>
           )}
 
           {showPieOptions && (

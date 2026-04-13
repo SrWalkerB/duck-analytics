@@ -9,6 +9,7 @@ datasource db {
 
 enum DataSourceType {
   MONGODB
+  POSTGRESQL
 }
 
 enum ComponentType {
@@ -17,6 +18,8 @@ enum ComponentType {
   LINE_CHART
   PIE_CHART
   KPI
+  PROGRESS_BAR
+  GAUGE
 }
 
 enum FilterType {
@@ -47,6 +50,7 @@ model User {
   email       String      @unique
   password    String
   name        String
+  locale      String      @default("pt-BR")
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
   deletedAt   DateTime?   @map("deleted_at")

@@ -9,11 +9,12 @@ async function bootstrap() {
   const allowedOrigins = env.CORS_ALLOWED_ORIGINS.split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
+  const allowAllOrigins = allowedOrigins.includes('*');
 
   app.use(helmet());
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowAllOrigins || allowedOrigins.includes(origin)) {
         callback(null, true);
         return;
       }

@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { api } from '@/services/api'
+import { flattenFields } from '@/lib/fields'
 import type { DataSource, FieldSchema, QueryConfiguration, QueryFilter, QueryAggregation, Query } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -69,7 +70,7 @@ export function QueryBuilder({ initialQuery }: Props) {
     onError: () => toast.error('Failed to save'),
   })
 
-  const fields = schema?.fields ?? []
+  const fields = useMemo(() => flattenFields(schema?.fields ?? []), [schema])
 
   function addFilter() {
     setConfiguration((c) => ({
@@ -114,7 +115,12 @@ export function QueryBuilder({ initialQuery }: Props) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Query Name</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} />
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Digite o título da query..."
+            className="bg-background/80"
+          />
         </div>
         <div className="space-y-2">
           <Label>Data Source</Label>

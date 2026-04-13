@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { GripVertical, Pencil, Trash2, FolderInput, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -51,13 +51,26 @@ export function ComponentCard({
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const dataError = (componentData as { error?: string } | undefined)?.error
-  const rows = componentData?.data ?? []
 
   const effectiveTitle = pendingTitle !== undefined ? pendingTitle : dc.title
   const effectiveDescription = pendingDescription !== undefined ? pendingDescription : dc.description
 
   const isTitleHidden = effectiveTitle === TITLE_HIDDEN
   const displayTitle = isTitleHidden ? null : (effectiveTitle ?? dc.component?.name ?? 'Component')
+  const chartContent = useMemo(
+    () => {
+      const rows = componentData?.data ?? []
+      return (
+        <ChartRenderer
+          type={(dc.component?.type ?? 'TABLE') as ComponentType}
+          data={rows}
+          configuration={(dc.component?.configuration as Record<string, unknown>) ?? {}}
+          title={displayTitle ?? dc.component?.name ?? 'dados'}
+        />
+      )
+    },
+    [componentData?.data, dc.component?.configuration, dc.component?.name, dc.component?.type, displayTitle],
+  )
 
   function handleMouseEnter() {
     clearTimeout(hideTimer.current)
@@ -210,12 +223,7 @@ export function ComponentCard({
               <p className="text-center text-xs text-destructive">Erro: {dataError}</p>
             </div>
           ) : (
-            <ChartRenderer
-              type={(dc.component?.type ?? 'TABLE') as ComponentType}
-              data={rows}
-              configuration={(dc.component?.configuration as Record<string, unknown>) ?? {}}
-              title={displayTitle ?? dc.component?.name ?? 'dados'}
-            />
+            chartContent
           )}
         </div>
       </Card>

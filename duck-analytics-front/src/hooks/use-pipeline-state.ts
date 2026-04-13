@@ -11,7 +11,7 @@ function createDefaultStage(type: PipelineStage['type']): PipelineStage {
     case '$match':
       return { ...base, type, filters: [] }
     case '$lookup':
-      return { ...base, type, from: '', localField: '', foreignField: '_id', as: '', unwind: false }
+      return { ...base, type, from: '', localField: '', foreignField: '_id', as: 'joined_data', unwind: false }
     case '$group':
       return { ...base, type, groupBy: [], aggregations: [] }
     case '$sort':

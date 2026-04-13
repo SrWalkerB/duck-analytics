@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { flattenFields } from '@/lib/fields'
 import { Trash2, RefreshCw, ExternalLink, GitBranch, Columns2 } from 'lucide-react'
 import { Link } from '@tanstack/react-router'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
@@ -193,8 +194,11 @@ export function FilterEditorPanel({
   const filteredCollections = collectionSearch
     ? collections.filter((c) => c.toLowerCase().includes(collectionSearch.toLowerCase()))
     : collections
-  const fields = schemaData?.fields ?? []
-  const queryFields = querySchemaData?.fields ?? []
+  const fields = useMemo(() => flattenFields(schemaData?.fields ?? []), [schemaData])
+  const queryFields = useMemo(
+    () => flattenFields(querySchemaData?.fields ?? []),
+    [querySchemaData],
+  )
   const canSave =
     sourceMode === 'query'
       ? !!(label.trim() && selectedQueryId && field)
@@ -439,7 +443,8 @@ export function FilterEditorPanel({
                   </Button>
                 </div>
                 <Link
-                  to="/questions"
+                  to="/questions/new"
+                  search={{ folderId: undefined }}
                   className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
                   target="_blank"
                 >

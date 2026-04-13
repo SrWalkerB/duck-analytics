@@ -1,6 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useTheme } from 'next-themes'
+import { Monitor, Moon, Sun } from 'lucide-react'
 import { api } from '@/services/api'
 import type { AIConfig } from '@/types'
 import { Button } from '@/components/ui/button'
@@ -12,6 +14,67 @@ import { toast } from 'sonner'
 export const Route = createFileRoute('/_authenticated/settings/')({
   component: SettingsPage,
 })
+
+function AppearanceSettingsCard() {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const value = theme ?? 'system'
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Aparência</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Tema da interface. &quot;Sistema&quot; usa a preferência claro ou escuro do dispositivo.
+        </p>
+        {!mounted ? (
+          <div className="flex h-9 gap-2">
+            <div className="h-9 flex-1 animate-pulse rounded-md bg-muted" />
+            <div className="h-9 flex-1 animate-pulse rounded-md bg-muted" />
+            <div className="h-9 flex-1 animate-pulse rounded-md bg-muted" />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <Button
+              type="button"
+              variant={value === 'system' ? 'default' : 'outline'}
+              className="justify-start sm:min-w-34"
+              onClick={() => setTheme('system')}
+            >
+              <Monitor className="size-4" />
+              Sistema
+            </Button>
+            <Button
+              type="button"
+              variant={value === 'light' ? 'default' : 'outline'}
+              className="justify-start sm:min-w-34"
+              onClick={() => setTheme('light')}
+            >
+              <Sun className="size-4" />
+              Claro
+            </Button>
+            <Button
+              type="button"
+              variant={value === 'dark' ? 'default' : 'outline'}
+              className="justify-start sm:min-w-34"
+              onClick={() => setTheme('dark')}
+            >
+              <Moon className="size-4" />
+              Escuro
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
 
 function SettingsPage() {
   const qc = useQueryClient()
@@ -44,6 +107,8 @@ function SettingsPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <h1 className="text-2xl font-bold">Settings</h1>
+
+      <AppearanceSettingsCard />
 
       <Card>
         <CardHeader>

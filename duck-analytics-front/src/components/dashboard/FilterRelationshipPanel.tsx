@@ -31,6 +31,7 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import type { DashboardFilter, FilterRelationship, FieldSchema } from '@/types'
 import { useQuery } from '@tanstack/react-query'
+import { flattenFields } from '@/lib/fields'
 import { api } from '@/services/api'
 import { cn } from '@/lib/utils'
 
@@ -221,8 +222,14 @@ export function FilterRelationshipPanel({
     enabled: !!targetFilter,
   })
 
-  const sourceFields = sourceSchemaQuery.data?.fields ?? []
-  const targetFields = targetSchemaQuery.data?.fields ?? []
+  const sourceFields = useMemo(
+    () => flattenFields(sourceSchemaQuery.data?.fields ?? []),
+    [sourceSchemaQuery.data],
+  )
+  const targetFields = useMemo(
+    () => flattenFields(targetSchemaQuery.data?.fields ?? []),
+    [targetSchemaQuery.data],
+  )
   const sourceFieldType = sourceFields.find((f) => f.name === draft.sourceField)?.type
   const targetFieldType = targetFields.find((f) => f.name === draft.targetField)?.type
   const hasTypeMismatch = !!(sourceFieldType && targetFieldType && sourceFieldType !== targetFieldType)

@@ -33,24 +33,26 @@ import {
 import { api } from '@/services/api'
 import { toast } from '@/lib/toast'
 import { PipelineStageCard } from './PipelineStageCard'
+import { getDataSourceTerminology } from '@/hooks/use-datasource-terminology'
 import type {
   PipelineStage,
   PipelineConfiguration,
   FieldSchema,
+  DataSource,
 } from '@/types'
 
-const STAGE_OPTIONS: {
-  type: PipelineStage['type']
-  label: string
-  icon: React.ReactNode
-}[] = [
-  { type: '$match', label: 'Filtrar ($match)', icon: <Filter size={14} /> },
-  { type: '$lookup', label: 'Join ($lookup)', icon: <Link2 size={14} /> },
-  { type: '$group', label: 'Agrupar ($group)', icon: <Sigma size={14} /> },
-  { type: '$sort', label: 'Ordenar ($sort)', icon: <ArrowUpDown size={14} /> },
-  { type: '$limit', label: 'Limite ($limit)', icon: <Hash size={14} /> },
-  { type: '$project', label: 'Projeção ($project)', icon: <Columns3 size={14} /> },
-  { type: '$unwind', label: 'Unwind ($unwind)', icon: <Layers size={14} /> },
+const STAGE_ICONS: Record<PipelineStage['type'], React.ReactNode> = {
+  '$match': <Filter size={14} />,
+  '$lookup': <Link2 size={14} />,
+  '$group': <Sigma size={14} />,
+  '$sort': <ArrowUpDown size={14} />,
+  '$limit': <Hash size={14} />,
+  '$project': <Columns3 size={14} />,
+  '$unwind': <Layers size={14} />,
+}
+
+const STAGE_TYPES: PipelineStage['type'][] = [
+  '$match', '$lookup', '$group', '$sort', '$limit', '$project', '$unwind',
 ]
 
 interface IntermediateResult {
@@ -66,6 +68,7 @@ interface Props {
   dataSourceId: string
   collection: string
   collections: string[]
+  dataSourceType?: DataSource['type']
   onAddStage: (type: PipelineStage['type']) => void
   onUpdateStage: (id: string, patch: Partial<PipelineStage>) => void
   onRemoveStage: (id: string) => void
@@ -81,6 +84,7 @@ export function PipelineBuilder({
   dataSourceId,
   collection,
   collections,
+  dataSourceType = 'MONGODB',
   onAddStage,
   onUpdateStage,
   onRemoveStage,
@@ -88,6 +92,16 @@ export function PipelineBuilder({
   onMoveStage,
   onPartialResult,
 }: Props) {
+  const terminology = getDataSourceTerminology(dataSourceType)
+  const stageOptions = useMemo(
+    () =>
+      STAGE_TYPES.map((type) => ({
+        type,
+        label: terminology.stageLabels[type] ?? type,
+        icon: STAGE_ICONS[type],
+      })),
+    [terminology],
+  )
   const [intermediateResults, setIntermediateResults] = useState<
     Map<string, IntermediateResult>
   >(new Map())
@@ -223,7 +237,7 @@ export function PipelineBuilder({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-52">
-          {STAGE_OPTIONS.map(({ type, label, icon }) => (
+          {stageOptions.map(({ type, label, icon }) => (
             <DropdownMenuItem
               key={type}
               onClick={() => onAddStage(type)}

@@ -99,14 +99,20 @@ export class EmbedController {
     @Query('parentValue') parentValue: string | undefined,
     @Req() req: Request,
   ) {
-    return this.service.getEmbedFilterValues(code, filterId, token, {
-      page: page ? parseInt(page, 10) : undefined,
-      pageSize: pageSize ? parseInt(pageSize, 10) : undefined,
-      search,
-      parentValue,
-    }, {
-      ip: req.ip,
-      userAgent: req.headers['user-agent'],
-    });
+    return this.service.getEmbedFilterValues(
+      code,
+      filterId,
+      token,
+      {
+        page: page ? parseInt(page, 10) : undefined,
+        pageSize: pageSize ? parseInt(pageSize, 10) : undefined,
+        search,
+        parentValue,
+      },
+      {
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+      },
+    );
   }
 }

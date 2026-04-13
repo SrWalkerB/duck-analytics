@@ -143,6 +143,13 @@ export function isPipelineConfiguration(
 
 @Injectable()
 export class QueryBuilderService {
+  /**
+   * Safety-net row limit applied to every executed query when the pipeline
+   * does not already include an explicit $limit stage. Prevents the UI from
+   * accidentally requesting tens of thousands of rows.
+   */
+  static readonly DEFAULT_LIMIT = 100;
+
   compile(
     config: QueryConfiguration,
     injectedFilters?: QueryFilter[],
@@ -220,8 +227,9 @@ export class QueryBuilderService {
       pipeline.push({ $sort: sortStage });
     }
 
-    // $limit stage
-    const limit = config.limit ?? 1000;
+    // $limit stage — always applied. Default 100 if user didn't specify
+    // one, to prevent accidentally loading huge result sets.
+    const limit = config.limit ?? QueryBuilderService.DEFAULT_LIMIT;
     pipeline.push({ $limit: limit });
 
     return pipeline;
@@ -252,15 +260,11 @@ export class QueryBuilderService {
       case 'lte':
         return { $lte: coerce(filter.value) };
       case 'in': {
-        const arr = Array.isArray(filter.value)
-          ? filter.value
-          : [filter.value];
+        const arr = Array.isArray(filter.value) ? filter.value : [filter.value];
         return { $in: arr.map(coerce) };
       }
       case 'nin': {
-        const arr = Array.isArray(filter.value)
-          ? filter.value
-          : [filter.value];
+        const arr = Array.isArray(filter.value) ? filter.value : [filter.value];
         return { $nin: arr.map(coerce) };
       }
       case 'regex':
@@ -354,10 +358,14 @@ export class QueryBuilderService {
   ): unknown[] {
     const pipeline: unknown[] = [];
     const enabledStages = config.stages.filter((s) => s.enabled);
+    const hasExplicitLimit = enabledStages.some((s) => s.type === '$limit');
 
     if (!injectedFilters || injectedFilters.length === 0) {
       for (const stage of enabledStages) {
         pipeline.push(...this.compileStage(stage));
+      }
+      if (!hasExplicitLimit) {
+        pipeline.push({ $limit: QueryBuilderService.DEFAULT_LIMIT });
       }
       return pipeline;
     }
@@ -391,6 +399,10 @@ export class QueryBuilderService {
         const match = this.buildMatch(stageFilters);
         if (Object.keys(match).length > 0) pipeline.push({ $match: match });
       }
+    }
+
+    if (!hasExplicitLimit) {
+      pipeline.push({ $limit: QueryBuilderService.DEFAULT_LIMIT });
     }
 
     return pipeline;
@@ -441,11 +453,7 @@ export class QueryBuilderService {
     if (isPipelineConfiguration(config)) {
       return this.getOutputFieldsPipeline(config, baseFields, foreignSchemas);
     }
-    return this.getOutputFieldsLegacy(
-      config,
-      baseFields,
-      foreignSchemas,
-    );
+    return this.getOutputFieldsLegacy(config, baseFields, foreignSchemas);
   }
 
   private getOutputFieldsPipeline(
@@ -553,7 +561,11 @@ export class QueryBuilderService {
     foreignSchemas: Map<string, FieldSchema[]> = new Map(),
   ): MatchableField[] {
     if (isPipelineConfiguration(config)) {
-      return this.getMatchableFieldsPipeline(config, baseFields, foreignSchemas);
+      return this.getMatchableFieldsPipeline(
+        config,
+        baseFields,
+        foreignSchemas,
+      );
     }
     return this.getMatchableFieldsLegacy(config, baseFields, foreignSchemas);
   }
@@ -736,7 +748,7 @@ export class QueryBuilderService {
       id: randomUUID(),
       enabled: true,
       type: '$limit',
-      limit: config.limit ?? 1000,
+      limit: config.limit ?? QueryBuilderService.DEFAULT_LIMIT,
     });
 
     return { version: 2, stages };

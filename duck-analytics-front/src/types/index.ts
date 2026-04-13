@@ -8,7 +8,7 @@ export interface User {
 export interface DataSource {
   id: string
   name: string
-  type: 'MONGODB'
+  type: 'MONGODB' | 'POSTGRESQL'
   database: string
   userId: string
   folderId: string | null
@@ -16,7 +16,7 @@ export interface DataSource {
   updatedAt: string
 }
 
-export type ComponentType = 'TABLE' | 'BAR_CHART' | 'LINE_CHART' | 'PIE_CHART' | 'KPI'
+export type ComponentType = 'TABLE' | 'BAR_CHART' | 'LINE_CHART' | 'PIE_CHART' | 'KPI' | 'PROGRESS_BAR' | 'GAUGE'
 export type FilterType = 'SELECT' | 'MULTI_SELECT' | 'DATE_RANGE' | 'TEXT'
 export type DashboardStatus = 'DRAFT' | 'PUBLISHED'
 export type EmbedType = 'PUBLIC' | 'JWT_SECURED'
@@ -155,6 +155,10 @@ export interface ChartDisplayConfig {
   showGrid?: boolean
   showLegend?: boolean
   showDataLabels?: boolean
+  dataLabelFontSize?: number
+  tickFontSize?: number
+  fontColor?: string
+  barLayout?: 'vertical' | 'horizontal'
   innerRadius?: number
   labelType?: 'value' | 'percentage' | 'name' | 'none'
   appendPieLabelToLegend?: boolean
@@ -164,6 +168,19 @@ export interface ChartDisplayConfig {
   compact?: boolean
   labelPosition?: 'top' | 'bottom'
   fontSize?: number
+  // PROGRESS_BAR specific
+  showValues?: boolean
+  showPercentage?: boolean
+  percentageLabel?: string
+  barHeight?: number
+  titleBold?: boolean
+  labelFontSize?: number
+  barBackgroundColor?: string
+  // GAUGE specific
+  showGaugeValue?: boolean
+  gaugeMin?: number
+  // LINE_CHART specific
+  showAreaFill?: boolean
 }
 
 export interface Component {
@@ -260,6 +277,7 @@ export interface SystemLog {
 export interface FieldSchema {
   name: string
   type: string
+  nested?: FieldSchema[]
 }
 
 export interface MatchableField {

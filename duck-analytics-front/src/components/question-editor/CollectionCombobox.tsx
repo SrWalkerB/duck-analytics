@@ -11,6 +11,8 @@ import {
   CommandList,
 } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { getDataSourceTerminology } from '@/hooks/use-datasource-terminology'
+import type { DataSource } from '@/types'
 
 interface CollectionComboboxProps {
   collections: string[]
@@ -18,6 +20,7 @@ interface CollectionComboboxProps {
   onChange: (collection: string) => void
   disabled?: boolean
   isLoading?: boolean
+  dataSourceType?: DataSource['type']
 }
 
 export function CollectionCombobox({
@@ -26,8 +29,10 @@ export function CollectionCombobox({
   onChange,
   disabled,
   isLoading,
+  dataSourceType = 'MONGODB',
 }: CollectionComboboxProps) {
   const [open, setOpen] = useState(false)
+  const terminology = getDataSourceTerminology(dataSourceType)
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -41,17 +46,21 @@ export function CollectionCombobox({
         >
           <span className="flex items-center gap-1.5 truncate">
             <Database size={12} className="shrink-0 text-muted-foreground" />
-            {value || 'Selecione a collection…'}
+            {value || terminology.placeholder}
           </span>
           <ChevronsUpDown size={12} className="shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
         <Command>
-          <CommandInput placeholder="Buscar coleções…" />
+          <CommandInput placeholder={dataSourceType === 'POSTGRESQL' ? 'Buscar tabelas…' : 'Buscar coleções…'} />
           <CommandList>
             <CommandEmpty>
-              {isLoading ? 'Carregando…' : 'Nenhuma coleção encontrada'}
+              {isLoading
+                ? 'Carregando…'
+                : dataSourceType === 'POSTGRESQL'
+                  ? 'Nenhuma tabela encontrada'
+                  : 'Nenhuma coleção encontrada'}
             </CommandEmpty>
             <CommandGroup>
               {collections.map((c) => (

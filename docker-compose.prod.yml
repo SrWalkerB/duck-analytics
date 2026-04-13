@@ -1,0 +1,33 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgresql://duck:${POSTGRES_PASSWORD:-duck}@db:5432/duck_analytics
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-700b29a4505d5255501ead237d12277994082d4b129272ce7c02edb1868e080b}
+      NODE_ENV: production
+      CORS_ALLOWED_ORIGINS: "*"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: postgres:18
+    volumes:
+      - pgdata:/var/lib/postgresql
+    environment:
+      POSTGRES_USER: duck
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-duck}
+      POSTGRES_DB: duck_analytics
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U duck -d duck_analytics"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:

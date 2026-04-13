@@ -10,7 +10,8 @@
 */
 
 export const DataSourceType = {
-  MONGODB: 'MONGODB'
+  MONGODB: 'MONGODB',
+  POSTGRESQL: 'POSTGRESQL'
 } as const
 
 export type DataSourceType = (typeof DataSourceType)[keyof typeof DataSourceType]
@@ -21,7 +22,9 @@ export const ComponentType = {
   BAR_CHART: 'BAR_CHART',
   LINE_CHART: 'LINE_CHART',
   PIE_CHART: 'PIE_CHART',
-  KPI: 'KPI'
+  KPI: 'KPI',
+  PROGRESS_BAR: 'PROGRESS_BAR',
+  GAUGE: 'GAUGE'
 } as const
 
 export type ComponentType = (typeof ComponentType)[keyof typeof ComponentType]

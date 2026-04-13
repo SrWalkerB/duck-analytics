@@ -10,7 +10,7 @@ import { randomBytes } from 'crypto';
 import { PrismaService } from '../../lib/prisma/prisma.service';
 import { DashboardsService } from '../dashboards/dashboards.service';
 import { LogsService } from '../../lib/logs/logs.service';
-import { MongoDBService } from '../../lib/mongodb/mongodb.service';
+import { DatabaseAdapterFactory } from '../../lib/database/database-adapter.factory';
 import { DataSourcesService } from '../data-sources/data-sources.service';
 import { QueriesService } from '../queries/queries.service';
 import { env } from '../../env';
@@ -30,7 +30,7 @@ export class EmbedService {
     private readonly dashboards: DashboardsService,
     private readonly jwt: JwtService,
     private readonly logs: LogsService,
-    private readonly mongodb: MongoDBService,
+    private readonly adapterFactory: DatabaseAdapterFactory,
     private readonly dataSources: DataSourcesService,
     private readonly queries: QueriesService,
   ) {}
@@ -59,9 +59,7 @@ export class EmbedService {
 
     const embedCode = nanoid(21);
     const embedSecret =
-      dto.embedType === 'JWT_SECURED'
-        ? randomBytes(32).toString('hex')
-        : null;
+      dto.embedType === 'JWT_SECURED' ? randomBytes(32).toString('hex') : null;
 
     const embed = await this.prisma.dashboardEmbed.upsert({
       where: { dashboardId },
@@ -145,10 +143,17 @@ export class EmbedService {
       this.validateEmbedToken(embed, token, userId, meta);
     }
 
-    this.emitLog(userId, 'INFO', 'ACCESS', `Embed accessed: ${embedCode}`, embed.id, {
-      ip: meta?.ip,
-      userAgent: meta?.userAgent,
-    });
+    this.emitLog(
+      userId,
+      'INFO',
+      'ACCESS',
+      `Embed accessed: ${embedCode}`,
+      embed.id,
+      {
+        ip: meta?.ip,
+        userAgent: meta?.userAgent,
+      },
+    );
 
     return {
       dashboard: embed.dashboard,
@@ -176,9 +181,16 @@ export class EmbedService {
         embed.dashboard,
         activeFilters,
       );
-      this.emitLog(userId, 'INFO', 'DATA_FETCH', 'Data fetched successfully', embed.id, {
-        ip: meta?.ip,
-      });
+      this.emitLog(
+        userId,
+        'INFO',
+        'DATA_FETCH',
+        'Data fetched successfully',
+        embed.id,
+        {
+          ip: meta?.ip,
+        },
+      );
       return data;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -220,7 +232,12 @@ export class EmbedService {
     embedCode: string,
     filterId: string,
     token: string | undefined,
-    params: { page?: number; pageSize?: number; search?: string; parentValue?: unknown },
+    params: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      parentValue?: unknown;
+    },
     meta?: RequestMeta,
   ) {
     const embed = await this.dashboards.findOneByEmbedCode(embedCode);
@@ -245,9 +262,16 @@ export class EmbedService {
         search,
         parentValue,
       );
-      this.emitLog(userId, 'INFO', 'FILTER_VALUES', `Filter values fetched: ${filter.label}`, embed.id, {
-        ip: meta?.ip,
-      });
+      this.emitLog(
+        userId,
+        'INFO',
+        'FILTER_VALUES',
+        `Filter values fetched: ${filter.label}`,
+        embed.id,
+        {
+          ip: meta?.ip,
+        },
+      );
       return result;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -261,16 +285,28 @@ export class EmbedService {
   }
 
   private validateEmbedToken(
-    embed: { id: string; embedCode: string; embedSecret: string | null; dashboard: { userId: string } },
+    embed: {
+      id: string;
+      embedCode: string;
+      embedSecret: string | null;
+      dashboard: { userId: string };
+    },
     token: string | undefined,
     userId: string,
     meta?: RequestMeta,
   ) {
     if (!token) {
-      this.emitLog(userId, 'ERROR', 'JWT_MISSING', 'No token provided for JWT-secured embed', embed.id, {
-        ip: meta?.ip,
-        userAgent: meta?.userAgent,
-      });
+      this.emitLog(
+        userId,
+        'ERROR',
+        'JWT_MISSING',
+        'No token provided for JWT-secured embed',
+        embed.id,
+        {
+          ip: meta?.ip,
+          userAgent: meta?.userAgent,
+        },
+      );
       throw new UnauthorizedException('Token is required for this embed');
     }
 
@@ -278,9 +314,10 @@ export class EmbedService {
     let payload: { embedCode?: string; type?: string };
 
     try {
-      payload = this.jwt.verify(token, { secret }) as typeof payload;
+      payload = this.jwt.verify(token, { secret });
     } catch (err) {
-      const isExpired = err instanceof Error && err.name === 'TokenExpiredError';
+      const isExpired =
+        err instanceof Error && err.name === 'TokenExpiredError';
       const event = isExpired ? 'JWT_EXPIRED' : 'JWT_INVALID';
       const message = isExpired
         ? 'Embed token has expired'
@@ -294,11 +331,18 @@ export class EmbedService {
     }
 
     if (payload.embedCode !== embed.embedCode) {
-      this.emitLog(userId, 'ERROR', 'JWT_CODE_MISMATCH', 'Token embed code does not match', embed.id, {
-        ip: meta?.ip,
-        tokenEmbedCode: payload.embedCode,
-        expectedEmbedCode: embed.embedCode,
-      });
+      this.emitLog(
+        userId,
+        'ERROR',
+        'JWT_CODE_MISMATCH',
+        'Token embed code does not match',
+        embed.id,
+        {
+          ip: meta?.ip,
+          tokenEmbedCode: payload.embedCode,
+          expectedEmbedCode: embed.embedCode,
+        },
+      );
       throw new UnauthorizedException('Token does not match this embed');
     }
   }
@@ -358,61 +402,55 @@ export class EmbedService {
       }
       items.sort((a, b) => a.label.localeCompare(b.label));
       const skip = (page - 1) * pageSize;
-      return { items: items.slice(skip, skip + pageSize), page, pageSize, total: items.length };
+      return {
+        items: items.slice(skip, skip + pageSize),
+        page,
+        pageSize,
+        total: items.length,
+      };
     }
 
+    // Simple mode: use adapter's getDistinctValues
     const ds = await this.dataSources.findOneInternal(filter.dataSourceId);
-    const db = await this.mongodb.getDb(ds.connectionString, ds.database);
-    const matchPipeline: object[] = [];
+    const adapter = this.adapterFactory.getAdapter(ds.type);
+
+    const matchFilters: { field: string; value: unknown; operator: string }[] =
+      [];
 
     if (parsedParent !== undefined && filter.parentFilterId) {
       const parent = await this.prisma.dashboardFilter.findUnique({
         where: { id: filter.parentFilterId },
       });
       if (parent) {
-        matchPipeline.push({
-          $match: {
-            [parent.field]: Array.isArray(parsedParent)
-              ? { $in: parsedParent }
-              : parsedParent,
-          },
+        matchFilters.push({
+          field: parent.field,
+          value: Array.isArray(parsedParent) ? parsedParent : parsedParent,
+          operator: Array.isArray(parsedParent) ? 'in' : 'eq',
         });
       }
     }
 
     if (search) {
-      matchPipeline.push({
-        $match: { [fieldName]: { $regex: search, $options: 'i' } },
-      });
+      // Search is handled by adapter.getDistinctValues
     }
 
     const skip = (page - 1) * pageSize;
-    const valueGrouping = { $group: { _id: `$${fieldName}` } };
-
-    const countResult = await db
-      .collection(filter.collection)
-      .aggregate([...matchPipeline, valueGrouping, { $count: 'total' }])
-      .toArray();
-    const total = countResult[0]?.total ?? 0;
-
-    const results = await db
-      .collection(filter.collection)
-      .aggregate([
-        ...matchPipeline,
-        valueGrouping,
-        { $sort: { _id: 1 } },
-        { $skip: skip },
-        { $limit: pageSize },
-      ])
-      .toArray();
+    const result = await adapter.getDistinctValues(
+      ds.connectionString,
+      ds.database,
+      filter.collection,
+      fieldName,
+      matchFilters.length > 0 ? matchFilters : undefined,
+      search,
+      skip,
+      pageSize,
+    );
 
     return {
-      items: results
-        .filter((r) => r._id !== null)
-        .map((r) => ({ label: String(r._id), value: r._id })),
+      items: result.items,
       page,
       pageSize,
-      total,
+      total: result.total,
     };
   }
 }

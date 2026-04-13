@@ -3,13 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
   Command,
@@ -41,22 +34,7 @@ export function LookupStageEditor({
 }: Props) {
   const [collectionOpen, setCollectionOpen] = useState(false)
   const [localFieldOpen, setLocalFieldOpen] = useState(false)
-
-  // Local state for debounced "as" field
-  const [localAs, setLocalAs] = useState(stage.as)
-
-  useEffect(() => {
-    setLocalAs(stage.as)
-  }, [stage.as])
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (localAs !== stage.as) {
-        onUpdate({ as: localAs })
-      }
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [localAs, stage.as, onUpdate])
+  const [foreignFieldOpen, setForeignFieldOpen] = useState(false)
 
   // Fetch schema for foreign collection
   const { data: foreignSchema } = useQuery<{ collection: string; fields: FieldSchema[] }>({
@@ -166,30 +144,56 @@ export function LookupStageEditor({
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-0.5">
           <Label className="text-[10px] text-muted-foreground">Foreign field</Label>
-          <Select value={stage.foreignField} onValueChange={(v) => onUpdate({ foreignField: v })}>
-            <SelectTrigger className="h-6 text-xs">
-              <SelectValue placeholder="_id" />
-            </SelectTrigger>
-            <SelectContent>
-              {(foreignSchema?.fields ?? []).map((f) => (
-                <SelectItem key={f.name} value={f.name}>
-                  {f.name}
-                </SelectItem>
-              ))}
-              {!foreignSchema && (
-                <p className="px-2 py-1.5 text-xs text-muted-foreground">
-                  {stage.from ? 'Carregando…' : 'Selecione a collection'}
-                </p>
-              )}
-            </SelectContent>
-          </Select>
+          <Popover open={foreignFieldOpen} onOpenChange={setForeignFieldOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className={cn(
+                  'flex h-6 w-full items-center justify-between rounded-md border border-input bg-background px-2 text-xs shadow-xs ring-offset-background',
+                  'hover:bg-accent/50 focus:outline-none focus:ring-1 focus:ring-ring',
+                  !stage.foreignField && 'text-muted-foreground',
+                )}
+              >
+                <span className="truncate">{stage.foreignField || '_id'}</span>
+                <ChevronsUpDown className="ml-1 size-3 shrink-0 opacity-50" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-0" align="start" sideOffset={4}>
+              <Command>
+                <CommandInput placeholder="Buscar campo..." className="text-xs" />
+                <CommandList>
+                  <CommandEmpty className="py-3 text-xs">
+                    {stage.from ? 'Nenhum campo encontrado.' : 'Selecione a collection'}
+                  </CommandEmpty>
+                  <CommandGroup>
+                    {(foreignSchema?.fields ?? []).map((f) => (
+                      <CommandItem
+                        key={f.name}
+                        value={f.name}
+                        data-checked={stage.foreignField === f.name}
+                        onSelect={(v) => {
+                          onUpdate({ foreignField: v })
+                          setForeignFieldOpen(false)
+                        }}
+                        className="text-xs"
+                      >
+                        {f.name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="space-y-0.5">
           <Label className="text-[10px] text-muted-foreground">Output alias</Label>
           <Input
             className="h-6 text-xs"
-            value={localAs}
-            onChange={(e) => setLocalAs(e.target.value)}
+            value={stage.as || 'joined_data'}
+            onChange={(e) => onUpdate({ as: e.target.value })}
+            onBlur={() => {
+              if (!stage.as.trim()) onUpdate({ as: 'joined_data' })
+            }}
             placeholder="joined_data"
           />
         </div>

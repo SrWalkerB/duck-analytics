@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/prisma/prisma.service';
 import { ComponentsService } from '../components/components.service';
-import { MongoDBService } from '../../lib/mongodb/mongodb.service';
+import { DatabaseAdapterFactory } from '../../lib/database/database-adapter.factory';
 import { DataSourcesService } from '../data-sources/data-sources.service';
 import type { CreateDashboardDto } from './dto/create-dashboard.dto';
 import type { UpdateDashboardDto } from './dto/update-dashboard.dto';
@@ -21,7 +21,7 @@ export class DashboardsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly components: ComponentsService,
-    private readonly mongodb: MongoDBService,
+    private readonly adapterFactory: DatabaseAdapterFactory,
     private readonly dataSources: DataSourcesService,
   ) {}
 
@@ -48,7 +48,9 @@ export class DashboardsService {
           include: {
             component: {
               include: {
-                query: { select: { id: true, collection: true, dataSourceId: true } },
+                query: {
+                  select: { id: true, collection: true, dataSourceId: true },
+                },
               },
             },
           },
@@ -71,12 +73,20 @@ export class DashboardsService {
               include: {
                 component: {
                   include: {
-                    query: { select: { id: true, collection: true, dataSourceId: true } },
+                    query: {
+                      select: {
+                        id: true,
+                        collection: true,
+                        dataSourceId: true,
+                      },
+                    },
                   },
                 },
               },
             },
-            dashboardFilters: { orderBy: [{ order: 'asc' }, { createdAt: 'asc' }] },
+            dashboardFilters: {
+              orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+            },
           },
         },
       },
@@ -173,10 +183,6 @@ export class DashboardsService {
     return { ok: true };
   }
 
-  /**
-   * Translate selected filter values (from filter.field) to the mapping's valueField
-   * by querying the source collection.
-   */
   private async translateValues(
     filter: { field: string; collection: string; dataSourceId: string },
     mapping: TargetMapping,
@@ -187,15 +193,15 @@ export class DashboardsService {
       return selected;
     }
     const ds = await this.dataSources.findOne(filter.dataSourceId, userId);
-    const db = await this.mongodb.getDb(ds.connectionString, ds.database);
-    const results = await db
-      .collection(filter.collection)
-      .aggregate([
-        { $match: { [filter.field]: { $in: selected } } },
-        { $group: { _id: `$${mapping.valueField}` } },
-      ])
-      .toArray();
-    return results.map((r) => r._id).filter((v) => v != null);
+    const adapter = this.adapterFactory.getAdapter(ds.type);
+    return adapter.translateValues(
+      ds.connectionString,
+      ds.database,
+      filter.collection,
+      filter.field,
+      mapping.valueField,
+      selected,
+    );
   }
 
   private async translateValuesInternal(
@@ -207,15 +213,15 @@ export class DashboardsService {
       return selected;
     }
     const ds = await this.dataSources.findOneInternal(filter.dataSourceId);
-    const db = await this.mongodb.getDb(ds.connectionString, ds.database);
-    const results = await db
-      .collection(filter.collection)
-      .aggregate([
-        { $match: { [filter.field]: { $in: selected } } },
-        { $group: { _id: `$${mapping.valueField}` } },
-      ])
-      .toArray();
-    return results.map((r) => r._id).filter((v) => v != null);
+    const adapter = this.adapterFactory.getAdapter(ds.type);
+    return adapter.translateValues(
+      ds.connectionString,
+      ds.database,
+      filter.collection,
+      filter.field,
+      mapping.valueField,
+      selected,
+    );
   }
 
   async getData(
@@ -227,10 +233,6 @@ export class DashboardsService {
     return this.getDataWithOwner(dashboard, activeFilters, userId);
   }
 
-  /**
-   * Fetch data for all components in a dashboard without userId checks.
-   * Used by the embed module after access has been validated.
-   */
   async getDataByDashboard(
     dashboard: Awaited<ReturnType<DashboardsService['findOne']>>,
     activeFilters: Record<string, unknown[]> = {},

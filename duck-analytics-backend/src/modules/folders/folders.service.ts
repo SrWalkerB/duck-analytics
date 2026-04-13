@@ -142,7 +142,12 @@ export class FoldersService {
 
     const map = new Map<string, FolderTreeNode>();
     for (const f of allFolders) {
-      map.set(f.id, { id: f.id, name: f.name, parentId: f.parentId, children: [] });
+      map.set(f.id, {
+        id: f.id,
+        name: f.name,
+        parentId: f.parentId,
+        children: [],
+      });
     }
 
     const roots: FolderTreeNode[] = [];

@@ -34,7 +34,15 @@ export class LogsService {
   }
 
   async findAll(userId: string, options: FindAllOptions = {}) {
-    const { source, level, event, resourceId, since, page = 1, pageSize = 50 } = options;
+    const {
+      source,
+      level,
+      event,
+      resourceId,
+      since,
+      page = 1,
+      pageSize = 50,
+    } = options;
 
     const where: Record<string, unknown> = { userId };
     if (source) where.source = source;

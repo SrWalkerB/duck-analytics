@@ -93,7 +93,8 @@ export class DashboardsController {
     @Body() dto: object,
   ) {
     const activeFilters =
-      (dto as { activeFilters?: Record<string, unknown[]> }).activeFilters ?? {};
+      (dto as { activeFilters?: Record<string, unknown[]> }).activeFilters ??
+      {};
     return this.service.getData(id, userId, activeFilters);
   }
 }

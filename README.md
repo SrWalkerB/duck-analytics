@@ -87,11 +87,82 @@ Veja `duck-analytics-front/.env.example`.
 
 ---
 
+## Produção com Docker
+
+O deploy de produção empacota **frontend + backend + Nginx** em um único container, estilo Metabase. Basta expor uma porta e acessar.
+
+### Início rápido
+
+```bash
+# 1. Configure as variáveis de ambiente
+cp .env.production.example .env
+# Edite o .env — troque JWT_SECRET, ENCRYPTION_KEY e POSTGRES_PASSWORD
+
+# 2. Suba tudo
+docker compose -f docker-compose.prod.yml up -d
+
+# 3. Acesse
+# http://localhost:3000
+```
+
+### Variáveis de ambiente (produção)
+
+Definidas no `.env` da raiz (lido pelo `docker-compose.prod.yml`):
+
+| Variável | Obrigatória | Descrição |
+|----------|:-----------:|-----------|
+| `JWT_SECRET` | Sim | Segredo para assinatura JWT. **Troque o valor padrão!** |
+| `ENCRYPTION_KEY` | Sim | 64 caracteres hex (32 bytes) para AES-256-GCM. Gere com `openssl rand -hex 32` |
+| `POSTGRES_PASSWORD` | Não | Senha do PostgreSQL (padrão: `duck`) |
+| `PORT` | Não | Porta exposta no host (padrão: `3000`) |
+
+> Veja o modelo completo em [`.env.production.example`](.env.production.example).
+
+### Como funciona
+
+```
+Usuário :3000 ──► Nginx (container app)
+                    ├── /v1/*   ──► Node.js :3001 (backend NestJS)
+                    └── /*      ──► arquivos estáticos (frontend React)
+
+                  PostgreSQL :5432 (container db)
+```
+
+- **Nginx** serve o frontend estático e faz proxy reverso de `/v1/*` para o backend
+- **Supervisord** gerencia Nginx e Node.js dentro do container
+- **Migrations** rodam automaticamente no startup (`prisma migrate deploy`)
+- **Dados do Postgres** ficam em um volume Docker (`pgdata`), persistindo entre restarts
+
+### Comandos úteis
+
+```bash
+# Ver logs em tempo real
+docker compose -f docker-compose.prod.yml logs -f app
+
+# Rebuild após mudanças no código
+docker compose -f docker-compose.prod.yml up -d --build
+
+# Parar tudo
+docker compose -f docker-compose.prod.yml down
+
+# Parar e apagar dados do banco (cuidado!)
+docker compose -f docker-compose.prod.yml down -v
+```
+
+---
+
 ## Estrutura do repositório
 
 ```
 duck-analytics/
-├── docker-compose.yaml          # PostgreSQL para o app
+├── docker-compose.yaml          # PostgreSQL para desenvolvimento
+├── docker-compose.prod.yml      # Produção: app + PostgreSQL (tudo-em-um)
+├── Dockerfile                   # Multi-stage build (frontend + backend + nginx)
+├── docker/                      # Configs do container de produção
+│   ├── nginx.conf               # Proxy reverso + SPA
+│   ├── supervisord.conf         # Gerencia nginx + node
+│   └── entrypoint.sh            # Migrations + startup
+├── .env.production.example      # Modelo de variáveis para produção
 ├── duck-analytics-backend/      # NestJS + Prisma 7 + MongoDB driver
 ├── duck-analytics-front/        # Vite + React + TanStack Router/Query + shadcn/ui
 ├── FUTURE_FEATURES.md           # Ideias / roadmap informal

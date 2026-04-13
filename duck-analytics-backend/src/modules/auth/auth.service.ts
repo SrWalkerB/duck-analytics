@@ -8,6 +8,15 @@ import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../../lib/prisma/prisma.service';
 import type { SignUpDto } from './dto/sign-up.dto';
 import type { SignInDto } from './dto/sign-in.dto';
+import {
+  defaultLocale,
+  type SupportedLocale,
+} from './dto/auth-locale';
+import {
+  updateUserPreferencesSchema,
+  type UpdateUserPreferencesDto,
+} from './dto/update-user-preferences.dto';
+import { signUpSchema } from './dto/sign-up.dto';
 
 @Injectable()
 export class AuthService {
@@ -17,16 +26,21 @@ export class AuthService {
   ) {}
 
   async signUp(dto: SignUpDto) {
+    const parsed = signUpSchema.parse(dto);
     const existing = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+      where: { email: parsed.email },
     });
     if (existing) throw new ConflictException('Email already in use');
-    const hashed = await bcrypt.hash(dto.password, 10);
+    const hashed = await bcrypt.hash(parsed.password, 10);
     const user = await this.prisma.user.create({
-      data: { email: dto.email, password: hashed, name: dto.name },
+      data: {
+        email: parsed.email,
+        password: hashed,
+        name: parsed.name,
+        locale: parsed.locale ?? defaultLocale,
+      },
     });
-    const token = this.jwt.sign({ sub: user.id, email: user.email });
-    return { token, user: { id: user.id, email: user.email, name: user.name } };
+    return this.createAuthResponse(user);
   }
 
   async signIn(dto: SignInDto) {
@@ -36,14 +50,48 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Invalid credentials');
     const valid = await bcrypt.compare(dto.password, user.password);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
-    const token = this.jwt.sign({ sub: user.id, email: user.email });
-    return { token, user: { id: user.id, email: user.email, name: user.name } };
+    return this.createAuthResponse(user);
   }
 
   async me(userId: string) {
     return this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
-      select: { id: true, email: true, name: true, createdAt: true },
+      select: { id: true, email: true, name: true, locale: true, createdAt: true },
     });
+  }
+
+  async updatePreferences(userId: string, dto: UpdateUserPreferencesDto) {
+    const parsed = updateUserPreferencesSchema.parse(dto);
+
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { locale: parsed.locale },
+      select: { id: true, email: true, name: true, locale: true, createdAt: true },
+    });
+  }
+
+  private createAuthResponse(user: {
+    id: string;
+    email: string;
+    name: string;
+    locale?: string | null;
+  }) {
+    const locale = this.normalizeLocale(user.locale);
+    const token = this.jwt.sign({ sub: user.id, email: user.email });
+
+    return {
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        locale,
+      },
+    };
+  }
+
+  private normalizeLocale(locale?: string | null): SupportedLocale {
+    if (locale === 'en' || locale === 'es' || locale === 'pt-BR') return locale;
+    return defaultLocale;
   }
 }

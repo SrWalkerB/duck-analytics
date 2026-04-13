@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { flattenFields } from '@/lib/fields'
 import {
   GripVertical,
   ChevronDown,
@@ -76,6 +77,11 @@ export function PipelineStageCard({
   const [expanded, setExpanded] = useState(true)
   const meta = STAGE_META[stage.type]
 
+  // Non-projection editors (match, group, sort, lookup, unwind) expect a flat
+  // list — the backend schema is now a tree, so flatten on the way in.
+  // ProjectStageEditor consumes the tree directly.
+  const flatFields = useMemo(() => flattenFields(fields), [fields])
+
   const {
     attributes,
     listeners,
@@ -147,22 +153,22 @@ export function PipelineStageCard({
       {expanded && (
         <div className="border-t px-3 py-2">
           {stage.type === '$match' && (
-            <MatchStageEditor stage={stage} fields={fields} onUpdate={onUpdate} />
+            <MatchStageEditor stage={stage} fields={flatFields} onUpdate={onUpdate} />
           )}
           {stage.type === '$lookup' && (
             <LookupStageEditor
               stage={stage}
-              fields={fields}
+              fields={flatFields}
               dataSourceId={dataSourceId}
               collections={collections}
               onUpdate={onUpdate}
             />
           )}
           {stage.type === '$group' && (
-            <GroupStageEditor stage={stage} fields={fields} onUpdate={onUpdate} />
+            <GroupStageEditor stage={stage} fields={flatFields} onUpdate={onUpdate} />
           )}
           {stage.type === '$sort' && (
-            <SortStageEditor stage={stage} fields={fields} onUpdate={onUpdate} />
+            <SortStageEditor stage={stage} fields={flatFields} onUpdate={onUpdate} />
           )}
           {stage.type === '$limit' && (
             <LimitStageEditor stage={stage} onUpdate={onUpdate} />
@@ -171,7 +177,7 @@ export function PipelineStageCard({
             <ProjectStageEditor stage={stage} fields={fields} onUpdate={onUpdate} />
           )}
           {stage.type === '$unwind' && (
-            <UnwindStageEditor stage={stage} fields={fields} onUpdate={onUpdate} />
+            <UnwindStageEditor stage={stage} fields={flatFields} onUpdate={onUpdate} />
           )}
         </div>
       )}

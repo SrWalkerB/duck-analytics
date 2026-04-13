@@ -18,6 +18,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import {
+  Activity,
   ArrowLeft,
   Play,
   Database,
@@ -32,6 +33,8 @@ import {
   Loader2,
   Columns3,
   GripVertical,
+  Gauge,
+  Plus,
 } from 'lucide-react'
 import { api } from '@/services/api'
 import { AlertTriangle } from 'lucide-react'
@@ -73,8 +76,18 @@ import { ChartOptionsPanel } from '@/components/visualizations/ChartOptionsPanel
 import { ResultsTable } from '@/components/question-editor/ResultsTable'
 import { CollectionCombobox } from '@/components/question-editor/CollectionCombobox'
 import { PipelineBuilder } from '@/components/question-editor/PipelineBuilder'
+import { getQuestionCollectionDestination } from '@/components/question-editor/navigation'
 import { usePipelineState } from '@/hooks/use-pipeline-state'
 import { toast } from '@/lib/toast'
+import { flattenRows } from '@/lib/flatten-row'
+import {
+  detectColumnType,
+  DEFAULT_DATE_FORMAT,
+  DEFAULT_NUMBER_FORMAT,
+  type ColumnFormat,
+  type ColumnType,
+} from '@/lib/column-format'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
 type Mode = 'editor' | 'visualization'
@@ -85,6 +98,8 @@ const VIZ_TYPES: { type: ComponentType; label: string; icon: React.ReactNode }[]
   { type: 'LINE_CHART', label: 'Line', icon: <LineChart size={18} /> },
   { type: 'PIE_CHART', label: 'Pie', icon: <PieChart size={18} /> },
   { type: 'KPI', label: 'KPI', icon: <Hash size={18} /> },
+  { type: 'PROGRESS_BAR', label: 'Progress', icon: <Activity size={18} /> },
+  { type: 'GAUGE', label: 'Gauge', icon: <Gauge size={18} /> },
 ]
 
 const TYPE_COLORS: Record<string, string> = {
@@ -225,17 +240,30 @@ function SortableColumnItem({
   col,
   visible,
   alias,
+  detectedType,
+  format,
   onToggle,
   onAliasChange,
+  onFormatChange,
 }: {
   col: string
   visible: boolean
   alias: string
+  detectedType: ColumnType
+  format: ColumnFormat | undefined
   onToggle: () => void
   onAliasChange: (value: string) => void
+  onFormatChange: (value: ColumnFormat | undefined) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: col })
   const style = { transform: CSS.Transform.toString(transform), transition }
+
+  const typeLabel: Record<ColumnType, string> = {
+    date: 'Data',
+    number: 'Número',
+    boolean: 'Booleano',
+    text: 'Texto',
+  }
 
   return (
     <div
@@ -263,16 +291,252 @@ function SortableColumnItem({
           {col.includes('.') && <Link2 size={9} className="mr-1 inline text-muted-foreground" />}
           {col}
         </span>
+        <Badge variant="outline" className="h-4 px-1 text-[9px] font-normal">
+          {typeLabel[detectedType]}
+        </Badge>
       </div>
       {visible && (
-        <Input
-          value={alias}
-          onChange={(e) => onAliasChange(e.target.value)}
-          placeholder="Nome de exibição"
-          className="h-7 text-xs"
-        />
+        <>
+          <Input
+            value={alias}
+            onChange={(e) => onAliasChange(e.target.value)}
+            placeholder="Nome de exibição"
+            className="h-7 text-xs"
+          />
+          {(detectedType === 'date' || detectedType === 'number') && (
+            <ColumnFormatPopover
+              detectedType={detectedType}
+              format={format}
+              onFormatChange={onFormatChange}
+            />
+          )}
+        </>
       )}
     </div>
+  )
+}
+
+function ColumnFormatPopover({
+  detectedType,
+  format,
+  onFormatChange,
+}: {
+  detectedType: 'date' | 'number'
+  format: ColumnFormat | undefined
+  onFormatChange: (value: ColumnFormat | undefined) => void
+}) {
+  const effective: ColumnFormat =
+    format ??
+    (detectedType === 'date'
+      ? DEFAULT_DATE_FORMAT
+      : DEFAULT_NUMBER_FORMAT)
+
+  const summary = (() => {
+    if (effective.type === 'date') {
+      const s = effective.separator === 'slash' ? '/' : effective.separator === 'dash' ? '-' : '.'
+      const order =
+        effective.order === 'DMY' ? `DD${s}MM${s}YYYY`
+          : effective.order === 'MDY' ? `MM${s}DD${s}YYYY`
+            : `YYYY${s}MM${s}DD`
+      const time =
+        effective.time === 'off' ? ''
+          : effective.time === 'hm' ? ' HH:MM'
+            : effective.time === 'hms' ? ' HH:MM:SS'
+              : ' HH:MM:SS.MS'
+      return `${order}${time}`
+    }
+    const parts: string[] = []
+    if (effective.prefix) parts.push(effective.prefix)
+    parts.push(`0${effective.decimals > 0 ? '.' + '0'.repeat(effective.decimals) : ''}`)
+    if (effective.suffix) parts.push(effective.suffix)
+    return parts.join('')
+  })()
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-7 w-full justify-between text-[10px] font-normal">
+          <span className="truncate">{summary}</span>
+          <span className="text-muted-foreground">Formato</span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-64 p-3" align="start">
+        {effective.type === 'date' ? (
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Separador</Label>
+              <Select
+                value={effective.separator}
+                onValueChange={(v) =>
+                  onFormatChange({ ...effective, separator: v as 'slash' | 'dash' | 'dot' })
+                }
+              >
+                <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="slash">/ (barra)</SelectItem>
+                  <SelectItem value="dash">- (hífen)</SelectItem>
+                  <SelectItem value="dot">. (ponto)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Ordem</Label>
+              <Select
+                value={effective.order}
+                onValueChange={(v) =>
+                  onFormatChange({ ...effective, order: v as 'DMY' | 'MDY' | 'YMD' })
+                }
+              >
+                <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="DMY">Dia / Mês / Ano</SelectItem>
+                  <SelectItem value="MDY">Mês / Dia / Ano</SelectItem>
+                  <SelectItem value="YMD">Ano / Mês / Dia</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Mostrar a hora</Label>
+              <Select
+                value={effective.time}
+                onValueChange={(v) =>
+                  onFormatChange({ ...effective, time: v as 'off' | 'hm' | 'hms' | 'hmsms' })
+                }
+              >
+                <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="off">Desligado</SelectItem>
+                  <SelectItem value="hm">HH:MM</SelectItem>
+                  <SelectItem value="hms">HH:MM:SS</SelectItem>
+                  <SelectItem value="hmsms">HH:MM:SS.MS</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {format && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-full text-[10px]"
+                onClick={() => onFormatChange(undefined)}
+              >
+                Restaurar padrão
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Casas decimais</Label>
+              <Input
+                type="number"
+                min={0}
+                max={10}
+                value={effective.decimals}
+                onChange={(e) =>
+                  onFormatChange({
+                    ...effective,
+                    decimals: Math.max(0, Math.min(10, Number(e.target.value) || 0)),
+                  })
+                }
+                className="h-7 text-xs"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={effective.thousands}
+                onCheckedChange={(v) =>
+                  onFormatChange({ ...effective, thousands: Boolean(v) })
+                }
+                className="size-3.5"
+              />
+              <Label className="text-xs">Separador de milhares</Label>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Prefixo</Label>
+              <Input
+                value={effective.prefix ?? ''}
+                onChange={(e) =>
+                  onFormatChange({ ...effective, prefix: e.target.value || undefined })
+                }
+                placeholder="Ex.: R$"
+                className="h-7 text-xs"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Sufixo</Label>
+              <Input
+                value={effective.suffix ?? ''}
+                onChange={(e) =>
+                  onFormatChange({ ...effective, suffix: e.target.value || undefined })
+                }
+                placeholder="Ex.: %"
+                className="h-7 text-xs"
+              />
+            </div>
+            {format && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-full text-[10px]"
+                onClick={() => onFormatChange(undefined)}
+              >
+                Restaurar padrão
+              </Button>
+            )}
+          </div>
+        )}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function EditableQuestionTitle({
+  value,
+  onCommit,
+}: {
+  value: string
+  onCommit: (nextValue: string) => void
+}) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+
+  function startEdit() {
+    setDraft(value)
+    setIsEditing(true)
+  }
+
+  function commit() {
+    onCommit(draft)
+    setIsEditing(false)
+  }
+
+  if (isEditing) {
+    return (
+      <Input
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => e.key === 'Enter' && commit()}
+        className="h-7 w-56 text-sm font-medium"
+        placeholder="Digite um título..."
+      />
+    )
+  }
+
+  return (
+    <button
+      className={cn(
+        'h-7 max-w-xs truncate rounded-md px-2 text-left text-sm font-medium transition-colors',
+        value.trim()
+          ? 'border border-transparent hover:border-border hover:bg-muted/40 hover:text-muted-foreground'
+          : 'border border-dashed border-border/80 bg-muted/20 text-muted-foreground hover:bg-muted/40',
+      )}
+      onClick={startEdit}
+      title="Clique para renomear"
+    >
+      {value.trim() || 'Digite um título...'}
+    </button>
   )
 }
 
@@ -284,12 +548,62 @@ interface Props {
 
 export function QuestionEditor({ initialQuery, initialComponent, folderId }: Props) {
   const navigate = useNavigate()
+  const backDestination = getQuestionCollectionDestination(
+    initialComponent?.folderId ?? folderId,
+  )
 
   const [name, setName] = useState(
     initialComponent?.name ?? initialQuery?.name ?? 'Sem título',
   )
-  const [editingName, setEditingName] = useState(false)
   const [mode, setMode] = useState<Mode>('editor')
+
+  // Resizable left panel — persisted locally. Min/max chosen so the user
+  // can read long nested dot-paths like `questions.<uuid>-title` without
+  // collapsing the results pane.
+  const SIDEBAR_MIN = 280
+  const SIDEBAR_MAX = 720
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    if (typeof window === 'undefined') return 320
+    const saved = Number(localStorage.getItem('questionEditor.sidebarWidth'))
+    if (Number.isFinite(saved) && saved >= SIDEBAR_MIN && saved <= SIDEBAR_MAX) {
+      return saved
+    }
+    return 320
+  })
+  const sidebarRef = useRef<HTMLDivElement>(null)
+  const isResizingRef = useRef(false)
+
+  useEffect(() => {
+    function onMove(e: PointerEvent) {
+      if (!isResizingRef.current || !sidebarRef.current) return
+      const rect = sidebarRef.current.getBoundingClientRect()
+      const next = Math.max(
+        SIDEBAR_MIN,
+        Math.min(SIDEBAR_MAX, e.clientX - rect.left),
+      )
+      setSidebarWidth(next)
+    }
+    function onUp() {
+      if (!isResizingRef.current) return
+      isResizingRef.current = false
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+      localStorage.setItem('questionEditor.sidebarWidth', String(sidebarWidth))
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+  }, [sidebarWidth])
+
+  function startResize(e: React.PointerEvent) {
+    e.preventDefault()
+    isResizingRef.current = true
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }
 
   // Query state
   const [dataSourceId, setDataSourceId] = useState(initialQuery?.dataSourceId ?? '')
@@ -303,14 +617,26 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
   const [xField, setXField] = useState(
     (initialComponent?.configuration['xField'] as string) ?? '',
   )
-  const [yField, setYField] = useState(
-    (initialComponent?.configuration['yField'] as string) ?? '',
-  )
+  const [yFields, setYFields] = useState<string[]>(() => {
+    const arr = initialComponent?.configuration['yFields'] as string[] | undefined
+    if (arr?.length) return arr
+    const single = initialComponent?.configuration['yField'] as string | undefined
+    return single ? [single] : ['']
+  })
   const [vizLabel, setVizLabel] = useState(
     (initialComponent?.configuration['label'] as string) ?? '',
   )
   const [displayConfig, setDisplayConfig] = useState<ChartDisplayConfig>(
     (initialComponent?.configuration['display'] as ChartDisplayConfig) ?? {},
+  )
+  const [goalField, setGoalField] = useState(
+    (initialComponent?.configuration['goalField'] as string) ?? '',
+  )
+  const [goalValue, setGoalValue] = useState(
+    (initialComponent?.configuration['goalValue'] as number) ?? 0,
+  )
+  const [goalSource, setGoalSource] = useState<'field' | 'fixed'>(
+    (initialComponent?.configuration['goalField'] as string) ? 'field' : 'fixed',
   )
 
   // Results
@@ -332,6 +658,43 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
   const [columnAliases, setColumnAliases] = useState<Record<string, string>>(
     (initialComponent?.configuration?.['columnAliases'] as Record<string, string>) ?? {},
   )
+
+  // Table display options (TABLE mode)
+  const [paginationMode, setPaginationMode] = useState<'infinite' | 'paginated'>(
+    (initialComponent?.configuration?.['paginationMode'] as 'infinite' | 'paginated') ?? 'paginated',
+  )
+  const [pageSize, setPageSize] = useState<number>(
+    (initialComponent?.configuration?.['pageSize'] as number) ?? 100,
+  )
+  const [exportFormats, setExportFormats] = useState<Array<'csv' | 'excel'>>(
+    (initialComponent?.configuration?.['exportFormats'] as Array<'csv' | 'excel'>) ?? ['csv', 'excel'],
+  )
+  const [columnFormats, setColumnFormats] = useState<Record<string, ColumnFormat>>(
+    (initialComponent?.configuration?.['columnFormats'] as Record<string, ColumnFormat>) ?? {},
+  )
+
+  // Flatten result rows so that nested fields selected via $project (e.g.
+  // `collectedItem.title`) surface as flat columns. MongoDB returns
+  // `{ collectedItem: { title: '...' } }` for a projection of
+  // `collectedItem.title`; without flattening the column picker only sees
+  // the top-level `collectedItem` key and the selected leaf is invisible.
+  const flatResults = useMemo<Record<string, unknown>[] | null>(() => {
+    if (!results) return null
+    return flattenRows(results)
+  }, [results])
+
+  // Auto-detect each column's type based on the current result rows.
+  const detectedColumnTypes = useMemo<Record<string, ColumnType>>(() => {
+    const rows = (flatResults ?? []) as Record<string, unknown>[]
+    if (rows.length === 0) return {}
+    const allCols = new Set<string>()
+    for (const row of rows.slice(0, 50)) {
+      for (const k of Object.keys(row)) allCols.add(k)
+    }
+    const out: Record<string, ColumnType> = {}
+    for (const c of allCols) out[c] = detectColumnType(rows, c)
+    return out
+  }, [flatResults])
 
   // DnD sensors for column reordering
   const dndSensors = useSensors(
@@ -388,6 +751,10 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
 
   const fields = schema?.fields ?? []
 
+  const selectedDataSourceType = useMemo(() => {
+    return dataSources?.find((ds) => ds.id === dataSourceId)?.type ?? 'MONGODB'
+  }, [dataSources, dataSourceId])
+
   const sortedCollections = useMemo(() => {
     const list = collectionsData?.collections ?? []
     return [...list].sort((a, b) =>
@@ -396,9 +763,17 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
   }, [collectionsData])
 
   const resultFields = useMemo(() => {
-    if (results && results.length > 0) return Object.keys(results[0]!)
+    if (flatResults && flatResults.length > 0) {
+      // Union of keys across the first few flattened rows so sparse nested
+      // fields (not present in row 0) still show up in the column picker.
+      const cols = new Set<string>()
+      for (const row of flatResults.slice(0, 50)) {
+        for (const k of Object.keys(row)) cols.add(k)
+      }
+      return [...cols]
+    }
     return fields.map((f) => f.name)
-  }, [results, fields])
+  }, [flatResults, fields])
 
   // Auto-run when editing existing component
   const autoRanRef = useRef(false)
@@ -443,7 +818,7 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
       if (data.length > 0) {
         const cols = Object.keys(data[0]!)
         if (!xField && cols[0]) setXField(cols[0])
-        if (!yField && cols[1]) setYField(cols[1])
+        if (!yFields.filter(Boolean).length && cols[1]) setYFields([cols[1]])
       }
       toast.success(`${res.data.count} linha${res.data.count !== 1 ? 's' : ''}`)
     } catch {
@@ -460,13 +835,25 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
     }
     setIsSaving(true)
     try {
-      const vizConf = {
+      const filteredYFields = yFields.filter(Boolean)
+      const vizConf: Record<string, unknown> = {
         xField,
-        yField,
+        yField: filteredYFields[0] ?? '',
+        yFields: filteredYFields,
         label: vizLabel,
         display: displayConfig,
         columnAliases: Object.keys(columnAliases).length > 0 ? columnAliases : undefined,
         columnOrder: visibleColumns ?? undefined,
+        paginationMode,
+        pageSize,
+        exportFormats,
+        columnFormats: Object.keys(columnFormats).length > 0 ? columnFormats : undefined,
+        ...((vizType === 'PROGRESS_BAR' || vizType === 'GAUGE') && goalSource === 'field' && goalField
+          ? { goalField }
+          : {}),
+        ...((vizType === 'PROGRESS_BAR' || vizType === 'GAUGE') && goalSource === 'fixed' && goalValue
+          ? { goalValue }
+          : {}),
       }
       let queryId = initialQuery?.id
 
@@ -537,7 +924,7 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
       pipeline.setAllStages(converted.stages)
       setVizType(g.vizType ?? 'TABLE')
       if (g.xField) setXField(g.xField)
-      if (g.yField) setYField(g.yField)
+      if (g.yField) setYFields([g.yField])
       if (g.vizLabel) setVizLabel(g.vizLabel)
       if (g.name && name === 'Sem título') setName(g.name)
       setAiOpen(false)
@@ -597,30 +984,13 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
           variant="ghost"
           size="icon"
           className="size-8 shrink-0"
-          onClick={() => navigate({ to: '/questions' })}
+          onClick={() => navigate(backDestination)}
         >
           <ArrowLeft size={15} />
         </Button>
-        <Separator orientation="vertical" className="h-5" />
+        <Separator orientation="vertical" className="h-full" />
 
-        {editingName ? (
-          <Input
-            autoFocus
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onBlur={() => setEditingName(false)}
-            onKeyDown={(e) => e.key === 'Enter' && setEditingName(false)}
-            className="h-7 w-56 text-sm font-medium"
-          />
-        ) : (
-          <button
-            className="max-w-xs truncate text-sm font-medium hover:text-muted-foreground transition-colors"
-            onClick={() => setEditingName(true)}
-            title="Clique para renomear"
-          >
-            {name}
-          </button>
-        )}
+        <EditableQuestionTitle key={name} value={name} onCommit={setName} />
 
         <div className="ml-auto flex items-center gap-2">
           {/* AI button */}
@@ -683,8 +1053,13 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
 
       {/* ── Body ── */}
       <div className="flex min-h-0 flex-1">
-        {/* Left panel */}
-        <div className="w-80 shrink-0 overflow-y-auto border-r">
+        {/* Left panel (resizable) */}
+        <div
+          ref={sidebarRef}
+          className="relative shrink-0 border-r"
+          style={{ width: sidebarWidth }}
+        >
+          <div className="h-full overflow-y-auto">
           {mode === 'editor' ? (
             <div className="space-y-4 p-4">
               {/* Data Source */}
@@ -710,12 +1085,15 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
               {/* Collection */}
               {dataSourceId && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">Collection</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    {selectedDataSourceType === 'POSTGRESQL' ? 'Tabela' : 'Collection'}
+                  </Label>
                   <CollectionCombobox
                     collections={sortedCollections}
                     value={collection}
                     onChange={handleCollectionChange}
                     isLoading={isLoadingCollections}
+                    dataSourceType={selectedDataSourceType}
                   />
                 </div>
               )}
@@ -731,6 +1109,7 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
                     dataSourceId={dataSourceId}
                     collection={collection}
                     collections={sortedCollections}
+                    dataSourceType={selectedDataSourceType}
                     onAddStage={pipeline.addStage}
                     onUpdateStage={pipeline.updateStage}
                     onRemoveStage={pipeline.removeStage}
@@ -845,9 +1224,21 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
                                   col={col}
                                   visible={visible}
                                   alias={columnAliases[col] ?? ''}
+                                  detectedType={detectedColumnTypes[col] ?? 'text'}
+                                  format={columnFormats[col]}
                                   onToggle={() => tryToggleColumn(col, currentVisible)}
                                   onAliasChange={(value) => {
                                     setColumnAliases((prev) => {
+                                      if (!value) {
+                                        const next = { ...prev }
+                                        delete next[col]
+                                        return next
+                                      }
+                                      return { ...prev, [col]: value }
+                                    })
+                                  }}
+                                  onFormatChange={(value) => {
+                                    setColumnFormats((prev) => {
                                       if (!value) {
                                         const next = { ...prev }
                                         delete next[col]
@@ -864,6 +1255,67 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
                       </DndContext>
                     )}
                   </div>
+
+                  <Separator />
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Linhas por página</Label>
+                    <Input
+                      type="number"
+                      min={10}
+                      max={1000}
+                      value={pageSize}
+                      onChange={(e) =>
+                        setPageSize(Math.max(10, Number(e.target.value) || 100))
+                      }
+                      className="h-8 text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Modo de navegação</Label>
+                    <Select
+                      value={paginationMode}
+                      onValueChange={(v) => setPaginationMode(v as 'infinite' | 'paginated')}
+                    >
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="paginated">Paginação</SelectItem>
+                        <SelectItem value="infinite">Infinite Scroll</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">
+                      Formatos de exportação permitidos
+                    </Label>
+                    <div className="flex flex-col gap-1.5">
+                      {(['csv', 'excel'] as const).map((fmt) => {
+                        const checked = exportFormats.includes(fmt)
+                        return (
+                          <label
+                            key={fmt}
+                            className="flex cursor-pointer items-center gap-2 text-xs"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(v) => {
+                                setExportFormats((prev) =>
+                                  v
+                                    ? Array.from(new Set([...prev, fmt]))
+                                    : prev.filter((f) => f !== fmt),
+                                )
+                              }}
+                              className="size-3.5"
+                            />
+                            <span className="uppercase">{fmt}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </>
               ) : (
                 <>
@@ -873,7 +1325,7 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
                       Mapeamento de campos
                     </Label>
 
-                    {vizType !== 'KPI' && (
+                    {vizType !== 'KPI' && vizType !== 'PROGRESS_BAR' && vizType !== 'GAUGE' && (
                       <div className="space-y-1.5">
                         <Label className="text-xs">Eixo X</Label>
                         <Select value={xField} onValueChange={setXField}>
@@ -893,23 +1345,52 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
 
                     <div className="space-y-1.5">
                       <Label className="text-xs">
-                        {vizType === 'KPI' ? 'Campo de valor' : 'Eixo Y'}
+                        {vizType === 'KPI' || vizType === 'PROGRESS_BAR' || vizType === 'GAUGE' ? 'Campo de valor' : 'Eixo Y'}
                       </Label>
-                      <Select value={yField} onValueChange={setYField}>
-                        <SelectTrigger className="h-8 text-sm">
-                          <SelectValue placeholder="Selecione o campo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {resultFields.map((f) => (
-                            <SelectItem key={f} value={f}>
-                              {f}
-                            </SelectItem>
+                      {vizType === 'KPI' || vizType === 'PROGRESS_BAR' || vizType === 'GAUGE' ? (
+                        <Select value={yFields[0] ?? ''} onValueChange={(v) => setYFields([v])}>
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue placeholder="Selecione o campo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {resultFields.map((f) => (
+                              <SelectItem key={f} value={f}>{f}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="space-y-1.5">
+                          {yFields.map((field, idx) => (
+                            <div key={idx} className="flex gap-1.5">
+                              <Select value={field} onValueChange={(v) => {
+                                const next = [...yFields]; next[idx] = v; setYFields(next)
+                              }}>
+                                <SelectTrigger className="h-8 text-sm">
+                                  <SelectValue placeholder="Selecione o campo" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {resultFields.map((f) => (
+                                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              {yFields.length > 1 && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"
+                                  onClick={() => setYFields(yFields.filter((_, i) => i !== idx))}>
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              )}
+                            </div>
                           ))}
-                        </SelectContent>
-                      </Select>
+                          <Button variant="outline" size="sm" className="h-7 text-xs"
+                            onClick={() => setYFields([...yFields, ''])}>
+                            <Plus className="mr-1 h-3 w-3" /> Adicionar série
+                          </Button>
+                        </div>
+                      )}
                     </div>
 
-                    {vizType === 'KPI' && (
+                    {(vizType === 'KPI' || vizType === 'PROGRESS_BAR' || vizType === 'GAUGE') && (
                       <div className="space-y-1.5">
                         <Label className="text-xs">Label</Label>
                         <Input
@@ -920,13 +1401,62 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
                         />
                       </div>
                     )}
+
+                    {(vizType === 'PROGRESS_BAR' || vizType === 'GAUGE') && (
+                      <>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs">Origem da meta</Label>
+                          <Select
+                            value={goalSource}
+                            onValueChange={(v) => setGoalSource(v as 'field' | 'fixed')}
+                          >
+                            <SelectTrigger className="h-8 text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="field">Campo da query</SelectItem>
+                              <SelectItem value="fixed">Valor fixo</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {goalSource === 'field' ? (
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Campo da meta</Label>
+                            <Select value={goalField} onValueChange={setGoalField}>
+                              <SelectTrigger className="h-8 text-sm">
+                                <SelectValue placeholder="Selecione o campo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {resultFields.map((f) => (
+                                  <SelectItem key={f} value={f}>
+                                    {f}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5">
+                            <Label className="text-xs">Valor da meta</Label>
+                            <Input
+                              type="number"
+                              className="h-8 text-sm"
+                              value={goalValue || ''}
+                              onChange={(e) => setGoalValue(Number(e.target.value))}
+                              placeholder="ex: 100"
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   <ChartOptionsPanel
                     type={vizType}
-                    data={results ?? []}
+                    data={flatResults ?? []}
                     xField={xField}
-                    yField={yField}
+                    yFields={yFields.filter(Boolean)}
                     config={displayConfig}
                     onChange={setDisplayConfig}
                   />
@@ -934,6 +1464,15 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
               )}
             </div>
           )}
+          </div>
+          {/* Drag handle to resize the sidebar */}
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            onPointerDown={startResize}
+            className="absolute inset-y-0 right-0 z-10 w-1.5 -translate-x-px cursor-col-resize bg-transparent hover:bg-primary/30 active:bg-primary/50"
+            title="Arraste para redimensionar"
+          />
         </div>
 
         {/* ── Main area ── */}
@@ -984,7 +1523,7 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
                 <div className="min-h-0 flex-1 overflow-hidden rounded-md border">
                   {vizType === 'TABLE' ? (
                     <ResultsTable
-                      data={results}
+                      data={flatResults ?? results}
                       visibleColumns={visibleColumns ?? undefined}
                       onVisibleColumnsChange={(cols) => {
                         setVisibleColumns(cols)
@@ -994,12 +1533,29 @@ export function QuestionEditor({ initialQuery, initialComponent, folderId }: Pro
                       columnAliases={Object.keys(columnAliases).length > 0 ? columnAliases : undefined}
                       columnOrder={visibleColumns ?? undefined}
                       exportFilename={name}
+                      editable
+                      paginationMode={paginationMode}
+                      pageSize={pageSize}
+                      exportFormats={exportFormats}
+                      columnFormats={Object.keys(columnFormats).length > 0 ? columnFormats : undefined}
                     />
                   ) : (
                     <ChartRenderer
                       type={vizType}
-                      data={results}
-                      configuration={{ xField, yField, label: vizLabel, display: displayConfig }}
+                      data={flatResults ?? results}
+                      configuration={{
+                        xField,
+                        yField: yFields.filter(Boolean)[0] ?? '',
+                        yFields: yFields.filter(Boolean),
+                        label: vizLabel,
+                        display: displayConfig,
+                        ...((vizType === 'PROGRESS_BAR' || vizType === 'GAUGE') && goalSource === 'field' && goalField
+                          ? { goalField }
+                          : {}),
+                        ...((vizType === 'PROGRESS_BAR' || vizType === 'GAUGE') && goalSource === 'fixed' && goalValue
+                          ? { goalValue }
+                          : {}),
+                      }}
                     />
                   )}
                 </div>

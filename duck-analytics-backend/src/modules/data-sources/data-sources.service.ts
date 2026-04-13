@@ -1,8 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/prisma/prisma.service';
 import { EncryptionService } from '../../lib/crypto/encryption.service';
-import { MongoDBService } from '../../lib/mongodb/mongodb.service';
-import { MongoDBIntrospectionService } from '../../lib/mongodb/mongodb-introspection.service';
+import { DatabaseAdapterFactory } from '../../lib/database/database-adapter.factory';
 import type { CreateDataSourceDto } from './dto/create-data-source.dto';
 import type { UpdateDataSourceDto } from './dto/update-data-source.dto';
 
@@ -11,8 +10,7 @@ export class DataSourcesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly encryption: EncryptionService,
-    private readonly mongodb: MongoDBService,
-    private readonly introspection: MongoDBIntrospectionService,
+    private readonly adapterFactory: DatabaseAdapterFactory,
   ) {}
 
   async findAll(userId: string) {
@@ -75,27 +73,36 @@ export class DataSourcesService {
     overrides?: { connectionString?: string; database?: string },
   ) {
     const ds = await this.findOne(id, userId);
+    const adapter = this.adapterFactory.getAdapter(ds.type);
     const connectionString = overrides?.connectionString?.trim();
     const database = overrides?.database?.trim() || ds.database;
 
     if (connectionString) {
-      await this.mongodb.testRawConnection(connectionString, database);
+      await adapter.testRawConnection(connectionString, database);
       return { ok: true };
     }
 
-    await this.mongodb.testConnection(ds.connectionString, database);
+    await adapter.testConnection(ds.connectionString, database);
     return { ok: true };
   }
 
-  async testRawConnection(connectionString: string, database: string) {
-    await this.mongodb.testRawConnection(connectionString, database);
+  async testRawConnection(
+    connectionString: string,
+    database: string,
+    type?: string,
+  ) {
+    const adapter = this.adapterFactory.getAdapter(type ?? 'MONGODB');
+    await adapter.testRawConnection(connectionString, database);
     return { ok: true };
   }
 
   async getCollections(id: string, userId: string) {
     const ds = await this.findOne(id, userId);
-    const db = await this.mongodb.getDb(ds.connectionString, ds.database);
-    const collections = await this.introspection.listCollections(db);
+    const adapter = this.adapterFactory.getAdapter(ds.type);
+    const collections = await adapter.listCollections(
+      ds.connectionString,
+      ds.database,
+    );
     return { collections };
   }
 
@@ -105,8 +112,12 @@ export class DataSourcesService {
     userId: string,
   ) {
     const ds = await this.findOne(id, userId);
-    const db = await this.mongodb.getDb(ds.connectionString, ds.database);
-    const schema = await this.introspection.inferSchema(db, collectionName);
-    return { collection: collectionName, fields: schema };
+    const adapter = this.adapterFactory.getAdapter(ds.type);
+    const fields = await adapter.inferSchema(
+      ds.connectionString,
+      ds.database,
+      collectionName,
+    );
+    return { collection: collectionName, fields };
   }
 }

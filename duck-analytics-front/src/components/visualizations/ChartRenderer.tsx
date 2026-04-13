@@ -3,6 +3,7 @@ import {
   Bar,
   LineChart,
   Line,
+  Area,
   PieChart,
   Pie,
   Cell,
@@ -16,12 +17,15 @@ import {
 } from 'recharts'
 import type { ComponentType, ChartDisplayConfig } from '@/types'
 import { ResultsTable } from '@/components/question-editor/ResultsTable'
+import { cn } from '@/lib/utils'
 
 interface Props {
   type: ComponentType
   data: Record<string, unknown>[]
   configuration: Record<string, unknown>
   title?: string
+  /** When true, table viz shows the "Colunas" edit dropdown. Default: false (dashboard/read-only). */
+  editable?: boolean
 }
 
 const DEFAULT_COLORS = [
@@ -73,7 +77,7 @@ function formatPieLabelValue(
   return `${((numeric / total) * 100).toFixed(0)}%`
 }
 
-export function ChartRenderer({ type, data, configuration, title }: Props) {
+export function ChartRenderer({ type, data, configuration, title, editable = false }: Props) {
   if (!data || data.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -83,16 +87,26 @@ export function ChartRenderer({ type, data, configuration, title }: Props) {
   }
 
   const xField = (configuration['xField'] as string) ?? Object.keys(data[0]!)[0] ?? '_id'
-  const yField = (configuration['yField'] as string) ?? Object.keys(data[0]!)[1] ?? 'value'
+  const rawYFields = configuration['yFields'] as string[] | undefined
+  const yFieldSingle = (configuration['yField'] as string) ?? Object.keys(data[0]!)[1] ?? 'value'
+  const yFields: string[] = rawYFields?.length ? rawYFields : [yFieldSingle]
+  const yField = yFields[0]!
   const display = (configuration['display'] as ChartDisplayConfig | undefined) ?? {}
   const colors = display.colors?.length ? display.colors : DEFAULT_COLORS
   const primaryColor = colors[0] ?? DEFAULT_COLORS[0]!
 
+  const isMultiSeries = yFields.length > 1
   const showGrid = display.showGrid !== false
-  // PIE default true, BAR/LINE default false (single series — legend only adds noise)
   const showLegend =
-    type === 'PIE_CHART' ? display.showLegend !== false : display.showLegend === true
+    type === 'PIE_CHART'
+      ? display.showLegend !== false
+      : isMultiSeries
+        ? display.showLegend !== false
+        : display.showLegend === true
   const showDataLabels = display.showDataLabels === true
+  const dataLabelFontSize = display.dataLabelFontSize ?? 10
+  const tickFontSize = display.tickFontSize ?? 11
+  const fontColor = display.fontColor ?? undefined
   const showXLabel = display.showXLabel !== false
   const showYLabel = display.showYLabel !== false
 
@@ -136,15 +150,193 @@ export function ChartRenderer({ type, data, configuration, title }: Props) {
     )
   }
 
+  if (type === 'PROGRESS_BAR') {
+    const currentValue = Number(data[0]?.[yField] ?? 0)
+    const goalFieldName = configuration['goalField'] as string | undefined
+    const goalFixed = configuration['goalValue'] as number | undefined
+    const goal = goalFieldName
+      ? Number(data[0]?.[goalFieldName] ?? 0)
+      : (goalFixed ?? 100)
+    const label = (configuration['label'] as string) ?? yField
+
+    const showValues = display.showValues !== false
+    const showPercentage = display.showPercentage !== false
+    const percentageLabel = display.percentageLabel ?? 'Atingimento percentual'
+    const barColor = colors[0] ?? '#3b82f6'
+    const barBg = display.barBackgroundColor ?? '#e5e7eb'
+    const barHeight = display.barHeight ?? 8
+    const titleBold = display.titleBold !== false
+    const labelFontSize = display.labelFontSize ?? 14
+
+    const percentage = goal > 0 ? (currentValue / goal) * 100 : 0
+    const clampedPercent = Math.min(percentage, 100)
+
+    const formatNum = (n: number) =>
+      n % 1 === 0
+        ? n.toLocaleString()
+        : n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+    return (
+      <div className="flex h-full flex-col justify-center gap-2 px-4">
+        <div className="flex items-baseline justify-between">
+          <span className={cn(titleBold && 'font-bold')} style={{ fontSize: labelFontSize }}>{label}</span>
+          {showValues && (
+            <span className="text-sm">
+              <span className="font-semibold" style={{ fontSize: '1.25rem' }}>
+                {formatNum(currentValue)}
+              </span>
+              <span className="text-muted-foreground"> / {formatNum(goal)}</span>
+            </span>
+          )}
+        </div>
+
+        <div
+          className="w-full overflow-hidden rounded-full"
+          style={{ height: barHeight, backgroundColor: barBg }}
+        >
+          <div
+            className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${clampedPercent}%`, backgroundColor: barColor }}
+          />
+        </div>
+
+        {showPercentage && (
+          <div className="flex items-baseline justify-between text-xs text-muted-foreground">
+            <span>{percentageLabel}</span>
+            <span>{percentage.toFixed(2)}%</span>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  if (type === 'GAUGE') {
+    const currentValue = Number(data[0]?.[yField] ?? 0)
+    const goalFieldName = configuration['goalField'] as string | undefined
+    const goalFixed = configuration['goalValue'] as number | undefined
+    const goal = goalFieldName
+      ? Number(data[0]?.[goalFieldName] ?? 0)
+      : (goalFixed ?? 100)
+    const label = (configuration['label'] as string) ?? yField
+    const gaugeColor = colors[0] ?? '#3b82f6'
+    const showValue = display.showGaugeValue !== false
+    const minValue = display.gaugeMin ?? 0
+
+    const percentage = goal - minValue > 0
+      ? (currentValue - minValue) / (goal - minValue)
+      : 0
+    const clampedPercent = Math.max(0, Math.min(percentage, 1))
+
+    const formatNum = (n: number) =>
+      n % 1 === 0
+        ? n.toLocaleString()
+        : n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+    // SVG arc math
+    const cx = 150
+    const cy = 130
+    const r = 100
+    const strokeWidth = 14
+    const startAngle = Math.PI
+    const endAngle = 0
+
+    const bgStartX = cx + r * Math.cos(startAngle)
+    const bgStartY = cy - r * Math.sin(startAngle)
+    const bgEndX = cx + r * Math.cos(endAngle)
+    const bgEndY = cy - r * Math.sin(endAngle)
+    const bgPath = `M ${bgStartX} ${bgStartY} A ${r} ${r} 0 0 1 ${bgEndX} ${bgEndY}`
+
+    const fillAngle = Math.PI - clampedPercent * Math.PI
+    const fillEndX = cx + r * Math.cos(fillAngle)
+    const fillEndY = cy - r * Math.sin(fillAngle)
+    const largeArc = clampedPercent > 0.5 ? 1 : 0
+    const fillPath = clampedPercent > 0
+      ? `M ${bgStartX} ${bgStartY} A ${r} ${r} 0 ${largeArc} 1 ${fillEndX} ${fillEndY}`
+      : ''
+
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-0">
+        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+        <svg viewBox="0 0 300 170" width="100%" style={{ maxWidth: 280, maxHeight: 160 }}>
+          {/* Background arc */}
+          <path
+            d={bgPath}
+            fill="none"
+            stroke="#e5e7eb"
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+          />
+          {/* Value arc */}
+          {fillPath && (
+            <path
+              d={fillPath}
+              fill="none"
+              stroke={gaugeColor}
+              strokeWidth={strokeWidth}
+              strokeLinecap="round"
+            />
+          )}
+          {/* Center value */}
+          {showValue && (
+            <text
+              x={cx}
+              y={cy - 10}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={32}
+              fontWeight={700}
+              fill="currentColor"
+            >
+              {formatNum(currentValue)}
+            </text>
+          )}
+          {/* Min label */}
+          <text
+            x={bgStartX}
+            y={cy + 22}
+            textAnchor="middle"
+            fontSize={12}
+            fill="currentColor"
+            opacity={0.5}
+          >
+            {formatNum(minValue)}
+          </text>
+          {/* Max label */}
+          <text
+            x={bgEndX}
+            y={cy + 22}
+            textAnchor="middle"
+            fontSize={12}
+            fill="currentColor"
+            opacity={0.5}
+          >
+            {formatNum(goal)}
+          </text>
+        </svg>
+      </div>
+    )
+  }
+
   if (type === 'TABLE') {
     const columnAliases = (configuration['columnAliases'] as Record<string, string>) ?? undefined
     const columnOrder = (configuration['columnOrder'] as string[]) ?? undefined
+    const paginationMode = (configuration['paginationMode'] as 'infinite' | 'paginated') ?? 'paginated'
+    const pageSize = (configuration['pageSize'] as number) ?? 100
+    const exportFormats = (configuration['exportFormats'] as Array<'csv' | 'excel'>) ?? ['csv', 'excel']
+    const columnFormats = configuration['columnFormats'] as
+      | Record<string, import('@/lib/column-format').ColumnFormat>
+      | undefined
     return (
       <ResultsTable
         data={data}
         columnAliases={columnAliases}
         columnOrder={columnOrder}
         exportFilename={title}
+        editable={editable}
+        paginationMode={paginationMode}
+        pageSize={pageSize}
+        exportFormats={exportFormats}
+        columnFormats={columnFormats}
       />
     )
   }
@@ -152,23 +344,25 @@ export function ChartRenderer({ type, data, configuration, title }: Props) {
   const xAxisLabel = showXLabel && display.xAxisLabel ? display.xAxisLabel : undefined
   const yAxisLabel = showYLabel && display.yAxisLabel ? display.yAxisLabel : undefined
 
+  const tickStyle = { fontSize: tickFontSize, ...(fontColor ? { fill: fontColor } : {}) }
+
   const xAxisProps = {
     dataKey: xField,
-    tick: { fontSize: 11 },
+    tick: tickStyle,
     interval: 0 as const,
     minTickGap: 0,
     tickMargin: 8,
     tickFormatter: formatXAxisTick,
     ...(xAxisLabel
       ? {
-          label: { value: xAxisLabel, position: 'insideBottom' as const, offset: -8, fontSize: 11 },
+          label: { value: xAxisLabel, position: 'insideBottom' as const, offset: -8, fontSize: tickFontSize, ...(fontColor ? { fill: fontColor } : {}) },
           height: 48,
         }
       : {}),
   }
 
   const yAxisProps = {
-    tick: { fontSize: 11 },
+    tick: tickStyle,
     ...(yAxisLabel
       ? {
           label: {
@@ -176,7 +370,8 @@ export function ChartRenderer({ type, data, configuration, title }: Props) {
             angle: -90,
             position: 'insideLeft' as const,
             offset: 10,
-            fontSize: 11,
+            fontSize: tickFontSize,
+            ...(fontColor ? { fill: fontColor } : {}),
           },
           width: 64,
         }
@@ -338,25 +533,81 @@ export function ChartRenderer({ type, data, configuration, title }: Props) {
   }
 
   if (type === 'LINE_CHART') {
+    const showAreaFill = display.showAreaFill !== false
     return (
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
+          {showAreaFill && (
+            <defs>
+              {yFields.map((field, i) => {
+                const color = colors[i % colors.length] ?? DEFAULT_COLORS[i % DEFAULT_COLORS.length]!
+                return (
+                  <linearGradient key={`gradient-${field}`} id={`areaGradient-${i}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+                    <stop offset="100%" stopColor={color} stopOpacity={0.05} />
+                  </linearGradient>
+                )
+              })}
+            </defs>
+          )}
           {showGrid && <CartesianGrid strokeDasharray="3 3" />}
           <XAxis {...xAxisProps} />
           <YAxis {...yAxisProps} />
           <Tooltip />
           {showLegend && <Legend />}
-          <Line type="monotone" dataKey={yField} stroke={primaryColor} dot={false}>
-            {showDataLabels && (
-              <LabelList dataKey={yField} position="top" style={{ fontSize: 10 }} />
-            )}
-          </Line>
+          {showAreaFill && yFields.map((_, i) => (
+            <Area
+              key={`area-${i}`}
+              type="monotone"
+              dataKey={yFields[i]!}
+              fill={`url(#areaGradient-${i})`}
+              stroke="none"
+            />
+          ))}
+          {yFields.map((field, i) => (
+            <Line key={field} type="monotone" dataKey={field} stroke={colors[i % colors.length]} dot={false}>
+              {showDataLabels && (
+                <LabelList dataKey={field} position="top" style={{ fontSize: dataLabelFontSize, ...(fontColor ? { fill: fontColor } : {}) }} />
+              )}
+            </Line>
+          ))}
         </LineChart>
       </ResponsiveContainer>
     )
   }
 
   // BAR_CHART (default)
+  const horizontal = display.barLayout === 'horizontal'
+
+  if (horizontal) {
+    const maxLabelLen = Math.max(...data.map((row) => String(row[xField] ?? '').length))
+    const yAxisWidth = Math.min(Math.max(maxLabelLen * 7, 60), 220)
+    return (
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} layout="vertical">
+          {showGrid && <CartesianGrid strokeDasharray="3 3" />}
+          <XAxis type="number" tick={tickStyle} />
+          <YAxis
+            type="category"
+            dataKey={xField}
+            tick={tickStyle}
+            width={yAxisWidth}
+            tickFormatter={formatXAxisTick}
+          />
+          <Tooltip />
+          {showLegend && <Legend />}
+          {yFields.map((field, i) => (
+            <Bar key={field} dataKey={field} fill={colors[i % colors.length]}>
+              {showDataLabels && (
+                <LabelList dataKey={field} position="right" style={{ fontSize: dataLabelFontSize, ...(fontColor ? { fill: fontColor } : {}) }} />
+              )}
+            </Bar>
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
+    )
+  }
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart data={data}>
@@ -365,11 +616,13 @@ export function ChartRenderer({ type, data, configuration, title }: Props) {
         <YAxis {...yAxisProps} />
         <Tooltip />
         {showLegend && <Legend />}
-        <Bar dataKey={yField} fill={primaryColor}>
-          {showDataLabels && (
-            <LabelList dataKey={yField} position="top" style={{ fontSize: 10 }} />
-          )}
-        </Bar>
+        {yFields.map((field, i) => (
+          <Bar key={field} dataKey={field} fill={colors[i % colors.length]}>
+            {showDataLabels && (
+              <LabelList dataKey={field} position="top" style={{ fontSize: dataLabelFontSize, ...(fontColor ? { fill: fontColor } : {}) }} />
+            )}
+          </Bar>
+        ))}
       </BarChart>
     </ResponsiveContainer>
   )

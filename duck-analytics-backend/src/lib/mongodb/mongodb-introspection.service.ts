@@ -28,13 +28,56 @@ export class MongoDBIntrospectionService {
       this.extractFields(doc, '', fieldTypes);
     }
 
-    const fields: FieldSchema[] = [];
-    for (const [path, types] of fieldTypes) {
-      if (path.includes('.')) continue;
-      fields.push({ name: path, type: this.resolveType(types) });
+    return this.buildTree(fieldTypes);
+  }
+
+  private buildTree(fieldTypes: Map<string, Set<string>>): FieldSchema[] {
+    // Index nodes by full dot-path so we can attach children to parents.
+    const nodes = new Map<string, FieldSchema>();
+
+    // Sort by depth (shallower first), then alphabetically, so parents
+    // always exist before children are attached.
+    const paths = [...fieldTypes.keys()].sort((a, b) => {
+      const da = a.split('.').length;
+      const db = b.split('.').length;
+      if (da !== db) return da - db;
+      return a.localeCompare(b);
+    });
+
+    const roots: FieldSchema[] = [];
+
+    for (const path of paths) {
+      const types = fieldTypes.get(path)!;
+      const node: FieldSchema = {
+        name: path,
+        type: this.resolveType(types),
+      };
+      nodes.set(path, node);
+
+      const lastDot = path.lastIndexOf('.');
+      if (lastDot === -1) {
+        roots.push(node);
+        continue;
+      }
+
+      const parentPath = path.slice(0, lastDot);
+      const parent = nodes.get(parentPath);
+      if (!parent) {
+        // Orphan (shouldn't happen given depth sort), treat as root.
+        roots.push(node);
+        continue;
+      }
+      if (!parent.nested) parent.nested = [];
+      parent.nested.push(node);
     }
 
-    return fields.sort((a, b) => a.name.localeCompare(b.name));
+    const sortTree = (list: FieldSchema[]) => {
+      list.sort((a, b) => a.name.localeCompare(b.name));
+      for (const n of list) if (n.nested) sortTree(n.nested);
+    };
+    sortTree(roots);
+
+    return roots;
   }
 
   private extractFields(

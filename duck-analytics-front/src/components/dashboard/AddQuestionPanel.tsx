@@ -12,6 +12,8 @@ const TYPE_LABELS: Record<string, string> = {
   LINE_CHART: 'Linha',
   PIE_CHART: 'Pizza',
   KPI: 'KPI',
+  PROGRESS_BAR: 'Progresso',
+  GAUGE: 'Gauge',
 }
 
 interface Props {

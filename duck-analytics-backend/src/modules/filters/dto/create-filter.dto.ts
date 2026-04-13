@@ -8,12 +8,16 @@ export const createFilterSchema = z.object({
   collection: z.string().min(1),
   dataSourceId: z.string(),
   parentFilterId: z.string().optional(),
-  targetMappings: z.array(z.object({
-    componentId: z.string(),
-    targetField: z.string(),
-    valueField: z.string().optional(),
-    fieldType: z.string().optional(),
-  })).default([]),
+  targetMappings: z
+    .array(
+      z.object({
+        componentId: z.string(),
+        targetField: z.string(),
+        valueField: z.string().optional(),
+        fieldType: z.string().optional(),
+      }),
+    )
+    .default([]),
   queryId: z.string().optional(),
 });
 

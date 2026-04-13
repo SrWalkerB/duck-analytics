@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../lib/prisma/prisma.service';
-import { MongoDBService } from '../../lib/mongodb/mongodb.service';
+import { DatabaseAdapterFactory } from '../../lib/database/database-adapter.factory';
 import { DataSourcesService } from '../data-sources/data-sources.service';
 import { QueriesService } from '../queries/queries.service';
 import type { QueryFilter } from '../queries/query-builder.service';
@@ -11,7 +11,7 @@ import type { UpdateFilterDto } from './dto/update-filter.dto';
 export class FiltersService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly mongodb: MongoDBService,
+    private readonly adapterFactory: DatabaseAdapterFactory,
     private readonly dataSources: DataSourcesService,
     private readonly queries: QueriesService,
   ) {}
@@ -30,7 +30,6 @@ export class FiltersService {
   }
 
   async create(dashboardId: string, dto: CreateFilterDto) {
-    // Auto-assign order: next after current max
     const last = await this.prisma.dashboardFilter.findFirst({
       where: { dashboardId },
       orderBy: { order: 'desc' },
@@ -63,9 +62,15 @@ export class FiltersService {
         ...(dto.type !== undefined && { type: dto.type }),
         ...(dto.field !== undefined && { field: dto.field }),
         ...(dto.collection !== undefined && { collection: dto.collection }),
-        ...(dto.dataSourceId !== undefined && { dataSourceId: dto.dataSourceId }),
-        ...(dto.parentFilterId !== undefined && { parentFilterId: dto.parentFilterId }),
-        ...(dto.targetMappings !== undefined && { targetMappings: dto.targetMappings as object }),
+        ...(dto.dataSourceId !== undefined && {
+          dataSourceId: dto.dataSourceId,
+        }),
+        ...(dto.parentFilterId !== undefined && {
+          parentFilterId: dto.parentFilterId,
+        }),
+        ...(dto.targetMappings !== undefined && {
+          targetMappings: dto.targetMappings as object,
+        }),
         ...(dto.queryId !== undefined && { queryId: dto.queryId ?? null }),
       },
     });
@@ -123,18 +128,15 @@ export class FiltersService {
           sourceFilter.dataSourceId,
           userId,
         );
-        const sourceDb = await this.mongodb.getDb(
+        const adapter = this.adapterFactory.getAdapter(sourceDs.type);
+        matchValues = await adapter.translateValues(
           sourceDs.connectionString,
           sourceDs.database,
+          sourceFilter.collection,
+          sourceFilter.field,
+          rel.sourceField,
+          sourceValues,
         );
-        const translated = await sourceDb
-          .collection(sourceFilter.collection)
-          .aggregate([
-            { $match: { [sourceFilter.field]: { $in: sourceValues } } },
-            { $group: { _id: `$${rel.sourceField}` } },
-          ])
-          .toArray();
-        matchValues = translated.map((r) => r._id).filter((v) => v != null);
       }
 
       constraints.push({ targetField: rel.targetField, values: matchValues });
@@ -169,7 +171,7 @@ export class FiltersService {
       relationships,
     );
 
-    // Query-based filter: execute the saved query and extract distinct values from the field column
+    // Query-based filter: execute the saved query and extract distinct values
     if (filter.queryId) {
       const injectedFilters: QueryFilter[] = [];
 
@@ -223,65 +225,49 @@ export class FiltersService {
       };
     }
 
-    // Simple mode: distinct aggregation on the collection
+    // Simple mode: use adapter's getDistinctValues
     const ds = await this.dataSources.findOne(filter.dataSourceId, userId);
-    const db = await this.mongodb.getDb(ds.connectionString, ds.database);
-    const matchPipeline: object[] = [];
+    const adapter = this.adapterFactory.getAdapter(ds.type);
+
+    const matchFilters: { field: string; value: unknown; operator: string }[] =
+      [];
 
     if (parsedParentValue !== undefined && filter.parentFilterId) {
       const parent = await this.findOne(filter.parentFilterId);
-      matchPipeline.push({
-        $match: {
-          [parent.field]: Array.isArray(parsedParentValue)
-            ? { $in: parsedParentValue }
-            : parsedParentValue,
-        },
+      matchFilters.push({
+        field: parent.field,
+        value: Array.isArray(parsedParentValue)
+          ? parsedParentValue
+          : parsedParentValue,
+        operator: Array.isArray(parsedParentValue) ? 'in' : 'eq',
       });
     }
 
-    // Apply relationship constraints: filter values based on active selections in related filters
     for (const constraint of relationshipConstraints) {
-      matchPipeline.push({
-        $match: {
-          [constraint.targetField]: { $in: constraint.values },
-        },
-      });
-    }
-
-    if (search) {
-      matchPipeline.push({
-        $match: { [fieldName]: { $regex: search, $options: 'i' } },
+      matchFilters.push({
+        field: constraint.targetField,
+        value: constraint.values,
+        operator: 'in',
       });
     }
 
     const skip = (page - 1) * pageSize;
-    const valueGrouping = { $group: { _id: `$${fieldName}` } };
-
-    const countResult = await db
-      .collection(filter.collection)
-      .aggregate([...matchPipeline, valueGrouping, { $count: 'total' }])
-      .toArray();
-    const total = countResult[0]?.total ?? 0;
-
-    const pagePipeline = [...matchPipeline];
-    pagePipeline.push(
-      valueGrouping,
-      { $sort: { _id: 1 } },
-      { $skip: skip },
-      { $limit: pageSize },
+    const result = await adapter.getDistinctValues(
+      ds.connectionString,
+      ds.database,
+      filter.collection,
+      fieldName,
+      matchFilters.length > 0 ? matchFilters : undefined,
+      search,
+      skip,
+      pageSize,
     );
 
-    const results = await db
-      .collection(filter.collection)
-      .aggregate(pagePipeline)
-      .toArray();
     return {
-      items: results
-        .filter((r) => r._id !== null)
-        .map((r) => ({ label: String(r._id), value: r._id })),
+      items: result.items,
       page,
       pageSize,
-      total,
+      total: result.total,
     };
   }
 }
