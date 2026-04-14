@@ -142,6 +142,14 @@ describe('AuthService', () => {
     });
   });
 
+  it('turns a missing user in me() into unauthorized', async () => {
+    prisma.user.findUniqueOrThrow.mockRejectedValue({ code: 'P2025' });
+
+    await expect(service.me('missing-user')).rejects.toEqual(
+      new UnauthorizedException('Invalid session'),
+    );
+  });
+
   it('updates locale preference', async () => {
     prisma.user.update.mockResolvedValue({
       id: 'user-1',
@@ -161,6 +169,14 @@ describe('AuthService', () => {
       data: { locale: 'en' },
       select: { id: true, email: true, name: true, locale: true, createdAt: true },
     });
+  });
+
+  it('turns a missing user preference update into unauthorized', async () => {
+    prisma.user.update.mockRejectedValue({ code: 'P2025' });
+
+    await expect(
+      service.updatePreferences('missing-user', { locale: 'en' }),
+    ).rejects.toEqual(new UnauthorizedException('Invalid session'));
   });
 
   it('rejects duplicate sign up emails', async () => {

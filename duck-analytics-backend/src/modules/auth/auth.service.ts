@@ -54,20 +54,42 @@ export class AuthService {
   }
 
   async me(userId: string) {
-    return this.prisma.user.findUniqueOrThrow({
-      where: { id: userId },
-      select: { id: true, email: true, name: true, locale: true, createdAt: true },
-    });
+    try {
+      return await this.prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          locale: true,
+          createdAt: true,
+        },
+      });
+    } catch (error) {
+      this.rethrowMissingUserAsUnauthorized(error);
+      throw error;
+    }
   }
 
   async updatePreferences(userId: string, dto: UpdateUserPreferencesDto) {
     const parsed = updateUserPreferencesSchema.parse(dto);
 
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: { locale: parsed.locale },
-      select: { id: true, email: true, name: true, locale: true, createdAt: true },
-    });
+    try {
+      return await this.prisma.user.update({
+        where: { id: userId },
+        data: { locale: parsed.locale },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          locale: true,
+          createdAt: true,
+        },
+      });
+    } catch (error) {
+      this.rethrowMissingUserAsUnauthorized(error);
+      throw error;
+    }
   }
 
   private createAuthResponse(user: {
@@ -93,5 +115,16 @@ export class AuthService {
   private normalizeLocale(locale?: string | null): SupportedLocale {
     if (locale === 'en' || locale === 'es' || locale === 'pt-BR') return locale;
     return defaultLocale;
+  }
+
+  private rethrowMissingUserAsUnauthorized(error: unknown): never | void {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === 'P2025'
+    ) {
+      throw new UnauthorizedException('Invalid session');
+    }
   }
 }

@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/services/api'
+import { useI18n } from '@/i18n/provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,6 +18,7 @@ export const Route = createFileRoute('/_authenticated/dashboards/new')({
 
 function NewDashboardPage() {
   const navigate = useNavigate()
+  const { t } = useI18n()
   const qc = useQueryClient()
   const { folderId } = Route.useSearch()
   const [name, setName] = useState('')
@@ -32,34 +34,34 @@ function NewDashboardPage() {
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ['dashboards'] })
       qc.invalidateQueries({ queryKey: ['collection-contents'] })
-      toast.success('Dashboard created')
+      toast.success(t('Dashboard created'))
       navigate({ to: '/dashboards/$id/edit', params: { id: res.data.id } })
     },
-    onError: () => toast.error('Failed to create dashboard'),
+    onError: () => toast.error(t('Failed to create dashboard')),
   })
 
   return (
     <div className="mx-auto max-w-lg">
       <Card>
         <CardHeader>
-          <CardTitle>New Dashboard</CardTitle>
+          <CardTitle>{t('New Dashboard')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={(e) => { e.preventDefault(); mutation.mutate() }} className="space-y-4">
             <div className="space-y-2">
-              <Label>Name</Label>
+              <Label>{t('Name')}</Label>
               <Input value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label>{t('Description')}</Label>
               <Input value={description} onChange={(e) => setDescription(e.target.value)} />
             </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Creating...' : 'Create'}
+                {mutation.isPending ? t('Creating...') : t('Create')}
               </Button>
               <Button type="button" variant="outline" onClick={() => navigate({ to: '/dashboards' })}>
-                Cancel
+                {t('Cancel')}
               </Button>
             </div>
           </form>

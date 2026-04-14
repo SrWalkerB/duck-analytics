@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Pencil } from 'lucide-react'
 import { api } from '@/services/api'
+import { useI18n } from '@/i18n/provider'
 import { useCollectionContents, useMoveItem } from '@/hooks/use-collections'
 import { CollectionTable } from '@/components/collection/CollectionTable'
 import { CollectionBreadcrumbs } from '@/components/collection/CollectionBreadcrumbs'
@@ -18,6 +19,7 @@ export const Route = createFileRoute('/_authenticated/collection/$folderId')({
 
 function CollectionFolderPage() {
   const { folderId } = Route.useParams()
+  const { t } = useI18n()
   const { data, isLoading } = useCollectionContents(folderId)
   const qc = useQueryClient()
   const moveItem = useMoveItem()
@@ -37,7 +39,7 @@ function CollectionFolderPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['collection-contents'] })
       qc.invalidateQueries({ queryKey: ['folder-tree'] })
-      toast.success('Item excluído')
+      toast.success(t('Item deleted'))
     },
   })
 
@@ -46,10 +48,10 @@ function CollectionFolderPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['collection-contents'] })
       qc.invalidateQueries({ queryKey: ['folder-tree'] })
-      toast.success('Pasta renomeada')
+      toast.success(t('Folder renamed'))
     },
     onError: () => {
-      toast.error('Falha ao renomear pasta')
+      toast.error(t('Failed to rename folder'))
     },
   })
 
@@ -61,13 +63,13 @@ function CollectionFolderPage() {
         targetFolderId,
       },
       {
-        onSuccess: () => toast.success(`"${draggedItem.name}" movido para pasta`),
-        onError: () => toast.error('Falha ao mover item'),
+        onSuccess: () => toast.success(t('"{name}" moved to folder', { name: draggedItem.name })),
+        onError: () => toast.error(t('Failed to move item')),
       },
     )
   }
 
-  const folderName = data?.folder?.name ?? 'Pasta'
+  const folderName = data?.folder?.name ?? t('Folder')
 
   useEffect(() => {
     setFolderNameDraft(folderName)
@@ -131,7 +133,7 @@ function CollectionFolderPage() {
             type="button"
             className="group inline-flex items-center gap-2 rounded-md border border-transparent px-2 py-1 text-left text-2xl font-bold transition-colors hover:cursor-text hover:border-border/80 hover:bg-muted/50"
             onClick={startFolderRename}
-            title="Clique para renomear a pasta"
+            title={t('Click to rename folder')}
           >
             <span>{folderName}</span>
             <Pencil className="size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />

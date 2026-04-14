@@ -1,11 +1,14 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { api } from '@/services/api'
+import { useI18n } from '@/i18n/provider'
+import { setStoredSession } from '@/lib/auth-storage'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
+import type { AuthResponse } from '@/types'
 
 export const Route = createFileRoute('/sign-in')({
   component: SignInPage,
@@ -13,6 +16,7 @@ export const Route = createFileRoute('/sign-in')({
 
 function SignInPage() {
   const navigate = useNavigate()
+  const { t, setLocale } = useI18n()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -21,11 +25,12 @@ function SignInPage() {
     e.preventDefault()
     setLoading(true)
     try {
-      const res = await api.post('/v1/auth/sign-in', { email, password })
-      localStorage.setItem('token', res.data.token)
+      const res = await api.post<AuthResponse>('/v1/auth/sign-in', { email, password })
+      setStoredSession(res.data)
+      setLocale(res.data.user.locale)
       await navigate({ to: '/dashboards' })
     } catch {
-      toast.error('Invalid credentials')
+      toast.error(t('Invalid credentials'))
     } finally {
       setLoading(false)
     }
@@ -35,25 +40,25 @@ function SignInPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Sign In</CardTitle>
-          <CardDescription>Duck Analytics</CardDescription>
+          <CardTitle>{t('Sign In')}</CardTitle>
+          <CardDescription>{t('Duck Analytics')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('Email')}</Label>
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('Password')}</Label>
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? t('Signing in...') : t('Sign In')}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              No account?{' '}
-              <a href="/sign-up" className="underline">Sign Up</a>
+              {t('No account?')}{' '}
+              <a href="/sign-up" className="underline">{t('Sign Up')}</a>
             </p>
           </form>
         </CardContent>

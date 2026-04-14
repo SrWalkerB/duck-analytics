@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/services/api'
 import type { Query } from '@/types'
+import { useI18n } from '@/i18n/provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -12,6 +13,7 @@ export const Route = createFileRoute('/_authenticated/queries/')({
 })
 
 function QueriesPage() {
+  const { t } = useI18n()
   const qc = useQueryClient()
   const { data, isLoading } = useQuery<(Query & { dataSource: { id: string; name: string } })[]>({
     queryKey: ['queries'],
@@ -22,21 +24,21 @@ function QueriesPage() {
     mutationFn: (id: string) => api.delete(`/v1/queries/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['queries'] })
-      toast.success('Deleted')
+      toast.success(t('Deleted'))
     },
   })
 
-  if (isLoading) return <div>Loading...</div>
+  if (isLoading) return <div>{t('Loading')}...</div>
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Queries</h1>
+        <h1 className="text-2xl font-bold">{t('Queries')}</h1>
         <Link to="/queries/new">
-          <Button>New Query</Button>
+          <Button>{t('New Query')}</Button>
         </Link>
       </div>
-      {!data?.length && <p className="text-muted-foreground">No queries yet.</p>}
+      {!data?.length && <p className="text-muted-foreground">{t('No queries yet.')}</p>}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {data?.map((q) => (
           <Card key={q.id}>
@@ -48,10 +50,10 @@ function QueriesPage() {
               <p className="mb-3 text-sm text-muted-foreground">{q.dataSource?.name}</p>
               <div className="flex gap-2">
                 <Link to="/queries/$id" params={{ id: q.id }}>
-                  <Button size="sm" variant="outline">Edit</Button>
+                  <Button size="sm" variant="outline">{t('Edit')}</Button>
                 </Link>
                 <Button size="sm" variant="destructive" onClick={() => deleteMutation.mutate(q.id)}>
-                  Delete
+                  {t('Delete')}
                 </Button>
               </div>
             </CardContent>

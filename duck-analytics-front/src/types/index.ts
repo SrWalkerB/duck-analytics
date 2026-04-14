@@ -1,8 +1,21 @@
+export type SupportedLocale = 'pt-BR' | 'en' | 'es'
+
 export interface User {
   id: string
   email: string
   name: string
+  locale: SupportedLocale
   createdAt: string
+}
+
+export interface AuthResponse {
+  token: string
+  user: {
+    id: string
+    email: string
+    name: string
+    locale: SupportedLocale
+  }
 }
 
 export interface DataSource {

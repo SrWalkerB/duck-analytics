@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { api } from '@/services/api'
 import type { DataSource } from '@/types'
+import { useI18n } from '@/i18n/provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,6 +17,7 @@ export const Route = createFileRoute('/_authenticated/data-sources/$id')({
 function EditDataSourcePage() {
   const { id } = Route.useParams()
   const navigate = useNavigate()
+  const { t } = useI18n()
   const qc = useQueryClient()
   const [name, setName] = useState<string | null>(null)
   const [connectionString, setConnectionString] = useState('')
@@ -38,10 +40,10 @@ function EditDataSourcePage() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['data-sources'] })
-      toast.success('Updated')
+      toast.success(t('Updated'))
       navigate({ to: '/data-sources' })
     },
-    onError: () => toast.error('Failed to update'),
+    onError: () => toast.error(t('Failed to update')),
   })
 
   const testMutation = useMutation({
@@ -50,39 +52,39 @@ function EditDataSourcePage() {
         connectionString: connectionString.trim() || undefined,
         database: currentDatabase,
       }),
-    onSuccess: () => toast.success('Connection successful'),
-    onError: () => toast.error('Connection failed'),
+    onSuccess: () => toast.success(t('Connection successful')),
+    onError: () => toast.error(t('Connection failed')),
   })
 
-  if (!ds) return <div>Loading...</div>
+  if (!ds) return <div>{t('Loading')}...</div>
 
   return (
     <div className="mx-auto max-w-lg">
       <Card>
         <CardHeader>
-          <CardTitle>Edit Data Source</CardTitle>
+          <CardTitle>{t('Edit Data Source')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={(e) => { e.preventDefault(); updateMutation.mutate() }} className="space-y-4">
             <div className="space-y-2">
-              <Label>Name</Label>
+              <Label>{t('Name')}</Label>
               <Input value={currentName} onChange={(e) => setName(e.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label>Connection String</Label>
+              <Label>{t('Connection String')}</Label>
               <Input
                 value={connectionString}
                 onChange={(e) => setConnectionString(e.target.value)}
-                placeholder="Leave blank to keep current connection"
+                placeholder={t('Leave blank to keep current connection')}
               />
             </div>
             <div className="space-y-2">
-              <Label>Database</Label>
+              <Label>{t('Database')}</Label>
               <Input value={currentDatabase} onChange={(e) => setDatabase(e.target.value)} required />
             </div>
             <div className="flex gap-2">
               <Button type="submit" disabled={updateMutation.isPending || !currentName || !currentDatabase}>
-                {updateMutation.isPending ? 'Saving...' : 'Save'}
+                {updateMutation.isPending ? t('Saving...') : t('Save')}
               </Button>
               <Button
                 type="button"
@@ -90,10 +92,10 @@ function EditDataSourcePage() {
                 disabled={testMutation.isPending || !currentDatabase || (!connectionString.trim() && !ds)}
                 onClick={() => testMutation.mutate()}
               >
-                {testMutation.isPending ? 'Testing...' : 'Test Connection'}
+                {testMutation.isPending ? t('Testing...') : t('Test Connection')}
               </Button>
               <Button type="button" variant="outline" onClick={() => navigate({ to: '/data-sources' })}>
-                Cancel
+                {t('Cancel')}
               </Button>
             </div>
           </form>

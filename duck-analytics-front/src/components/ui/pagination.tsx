@@ -5,6 +5,7 @@ import {
   MoreHorizontalIcon,
 } from "lucide-react"
 
+import { useI18n } from "@/i18n/provider"
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
 
@@ -70,6 +71,8 @@ function PaginationPrevious({
   className,
   ...props
 }: React.ComponentProps<typeof PaginationLink>) {
+  const { t } = useI18n()
+
   return (
     <PaginationLink
       aria-label="Go to previous page"
@@ -78,7 +81,7 @@ function PaginationPrevious({
       {...props}
     >
       <ChevronLeftIcon />
-      <span className="hidden sm:inline">Anterior</span>
+      <span className="hidden sm:inline">{t('Previous')}</span>
     </PaginationLink>
   )
 }
@@ -87,6 +90,8 @@ function PaginationNext({
   className,
   ...props
 }: React.ComponentProps<typeof PaginationLink>) {
+  const { t } = useI18n()
+
   return (
     <PaginationLink
       aria-label="Go to next page"
@@ -94,7 +99,7 @@ function PaginationNext({
       className={cn("gap-1 px-2", className)}
       {...props}
     >
-      <span className="hidden sm:inline">Próximo</span>
+      <span className="hidden sm:inline">{t('Next')}</span>
       <ChevronRightIcon />
     </PaginationLink>
   )
@@ -104,6 +109,8 @@ function PaginationEllipsis({
   className,
   ...props
 }: React.ComponentProps<"span">) {
+  const { t } = useI18n()
+
   return (
     <span
       aria-hidden
@@ -112,7 +119,7 @@ function PaginationEllipsis({
       {...props}
     >
       <MoreHorizontalIcon className="size-3.5" />
-      <span className="sr-only">More pages</span>
+      <span className="sr-only">{t('More pages')}</span>
     </span>
   )
 }

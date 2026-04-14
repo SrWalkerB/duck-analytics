@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/services/api'
+import { useI18n } from '@/i18n/provider'
 import { useCollectionContents, useMoveItem } from '@/hooks/use-collections'
 import { CollectionTable } from '@/components/collection/CollectionTable'
 import { NewItemDropdown } from '@/components/collection/NewItemDropdown'
@@ -13,6 +14,7 @@ export const Route = createFileRoute('/_authenticated/collection/')({
 })
 
 function CollectionRootPage() {
+  const { t } = useI18n()
   const { data, isLoading } = useCollectionContents(null)
   const qc = useQueryClient()
   const moveItem = useMoveItem()
@@ -30,7 +32,7 @@ function CollectionRootPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['collection-contents'] })
       qc.invalidateQueries({ queryKey: ['folder-tree'] })
-      toast.success('Item excluído')
+      toast.success(t('Item deleted'))
     },
   })
 
@@ -42,8 +44,8 @@ function CollectionRootPage() {
         targetFolderId,
       },
       {
-        onSuccess: () => toast.success(`"${draggedItem.name}" movido para pasta`),
-        onError: () => toast.error('Falha ao mover item'),
+        onSuccess: () => toast.success(t('"{name}" moved to folder', { name: draggedItem.name })),
+        onError: () => toast.error(t('Failed to move item')),
       },
     )
   }
@@ -60,7 +62,7 @@ function CollectionRootPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Coleções</h1>
+        <h1 className="text-2xl font-bold">{t('Collections')}</h1>
         <NewItemDropdown currentFolderId={null} />
       </div>
       <CollectionTable

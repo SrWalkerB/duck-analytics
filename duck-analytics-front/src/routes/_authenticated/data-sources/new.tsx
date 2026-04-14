@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/services/api'
+import { useI18n } from '@/i18n/provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,6 +23,7 @@ export const Route = createFileRoute('/_authenticated/data-sources/new')({
 
 function NewDataSourcePage() {
   const navigate = useNavigate()
+  const { t } = useI18n()
   const qc = useQueryClient()
   const [name, setName] = useState('')
   const [type, setType] = useState<DataSource['type']>('MONGODB')
@@ -65,10 +67,10 @@ function NewDataSourcePage() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['data-sources'] })
-      toast.success('Data source created')
+      toast.success(t('Data source created'))
       navigate({ to: '/data-sources' })
     },
-    onError: () => toast.error('Failed to create'),
+    onError: () => toast.error(t('Failed to create')),
   })
 
   const testMutation = useMutation({
@@ -78,9 +80,8 @@ function NewDataSourcePage() {
         database: resolvedDatabase,
         type,
       }),
-    onSuccess: () => toast.success('Connection successful!'),
-    onError: () =>
-      toast.error('Connection failed. Check the connection details.'),
+    onSuccess: () => toast.success(t('Connection successful!')),
+    onError: () => toast.error(t('Connection failed. Check the connection details.')),
   })
 
   function handleTypeChange(v: string) {
@@ -91,7 +92,7 @@ function NewDataSourcePage() {
     <div className="mx-auto max-w-lg">
       <Card>
         <CardHeader>
-          <CardTitle>New Data Source</CardTitle>
+          <CardTitle>{t('New Data Source')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -102,7 +103,7 @@ function NewDataSourcePage() {
             className="space-y-4"
           >
             <div className="space-y-2">
-              <Label>Name</Label>
+              <Label>{t('Name')}</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -111,7 +112,7 @@ function NewDataSourcePage() {
             </div>
 
             <div className="space-y-2">
-              <Label>Type</Label>
+              <Label>{t('Type')}</Label>
               <Select value={type} onValueChange={handleTypeChange}>
                 <SelectTrigger>
                   <SelectValue />
@@ -126,7 +127,7 @@ function NewDataSourcePage() {
             {type === 'MONGODB' ? (
               <>
                 <div className="space-y-2">
-                  <Label>Connection String</Label>
+                  <Label>{t('Connection String')}</Label>
                   <Input
                     value={connectionString}
                     onChange={(e) => setConnectionString(e.target.value)}
@@ -135,7 +136,7 @@ function NewDataSourcePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Database</Label>
+                  <Label>{t('Database')}</Label>
                   <Input
                     value={mongoDatabase}
                     onChange={(e) => setMongoDatabase(e.target.value)}
@@ -146,7 +147,7 @@ function NewDataSourcePage() {
             ) : (
               <>
                 <div className="space-y-2">
-                  <Label>Host</Label>
+                  <Label>{t('Host')}</Label>
                   <Input
                     value={pgHost}
                     onChange={(e) => setPgHost(e.target.value)}
@@ -155,7 +156,7 @@ function NewDataSourcePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Port</Label>
+                  <Label>{t('Port')}</Label>
                   <Input
                     value={pgPort}
                     onChange={(e) => setPgPort(e.target.value)}
@@ -164,7 +165,7 @@ function NewDataSourcePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Database</Label>
+                  <Label>{t('Database')}</Label>
                   <Input
                     value={pgDatabase}
                     onChange={(e) => setPgDatabase(e.target.value)}
@@ -173,7 +174,7 @@ function NewDataSourcePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Username</Label>
+                  <Label>{t('Username')}</Label>
                   <Input
                     value={pgUsername}
                     onChange={(e) => setPgUsername(e.target.value)}
@@ -181,7 +182,7 @@ function NewDataSourcePage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Password</Label>
+                  <Label>{t('Password')}</Label>
                   <Input
                     type="password"
                     value={pgPassword}
@@ -198,17 +199,17 @@ function NewDataSourcePage() {
                 disabled={testMutation.isPending || !isFormValid}
                 onClick={() => testMutation.mutate()}
               >
-                {testMutation.isPending ? 'Testing...' : 'Test Connection'}
+                {testMutation.isPending ? t('Testing...') : t('Test Connection')}
               </Button>
               <Button type="submit" disabled={mutation.isPending || !isFormValid}>
-                {mutation.isPending ? 'Creating...' : 'Create'}
+                {mutation.isPending ? t('Creating...') : t('Create')}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => navigate({ to: '/data-sources' })}
               >
-                Cancel
+                {t('Cancel')}
               </Button>
             </div>
           </form>

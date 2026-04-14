@@ -2,9 +2,10 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
-import { Monitor, Moon, Sun } from 'lucide-react'
+import { Languages, Monitor, Moon, Sun } from 'lucide-react'
 import { api } from '@/services/api'
-import type { AIConfig } from '@/types'
+import type { AIConfig, SupportedLocale, User } from '@/types'
+import { useI18n } from '@/i18n/provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -17,6 +18,7 @@ export const Route = createFileRoute('/_authenticated/settings/')({
 
 function AppearanceSettingsCard() {
   const { theme, setTheme } = useTheme()
+  const { t } = useI18n()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -28,11 +30,11 @@ function AppearanceSettingsCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Aparência</CardTitle>
+        <CardTitle>{t('Appearance')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Tema da interface. &quot;Sistema&quot; usa a preferência claro ou escuro do dispositivo.
+          {t('Theme appearance. "System" uses the device light or dark preference.')}
         </p>
         {!mounted ? (
           <div className="flex h-9 gap-2">
@@ -49,7 +51,7 @@ function AppearanceSettingsCard() {
               onClick={() => setTheme('system')}
             >
               <Monitor className="size-4" />
-              Sistema
+              {t('System')}
             </Button>
             <Button
               type="button"
@@ -58,7 +60,7 @@ function AppearanceSettingsCard() {
               onClick={() => setTheme('light')}
             >
               <Sun className="size-4" />
-              Claro
+              {t('Light')}
             </Button>
             <Button
               type="button"
@@ -67,7 +69,7 @@ function AppearanceSettingsCard() {
               onClick={() => setTheme('dark')}
             >
               <Moon className="size-4" />
-              Escuro
+              {t('Dark')}
             </Button>
           </div>
         )}
@@ -76,8 +78,66 @@ function AppearanceSettingsCard() {
   )
 }
 
+function LanguageSettingsCard() {
+  const qc = useQueryClient()
+  const { locale, setLocale, t, supportedLocales, localeLabels } = useI18n()
+
+  const mutation = useMutation({
+    mutationFn: (nextLocale: SupportedLocale) =>
+      api.patch<User>('/v1/auth/preferences', { locale: nextLocale }).then((r) => r.data),
+    onSuccess: (user) => {
+      qc.setQueryData(['me'], user)
+      setLocale(user.locale)
+      toast.success(t('Language updated'))
+    },
+  })
+
+  function handleLocaleChange(nextLocale: SupportedLocale) {
+    if (nextLocale === locale || mutation.isPending) return
+
+    const previousLocale = locale
+    setLocale(nextLocale)
+
+    mutation.mutate(nextLocale, {
+      onError: () => {
+        setLocale(previousLocale)
+        toast.error(t('Failed to update language'))
+      },
+    })
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t('Language')}</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          {t('Choose the interface language. Changes are applied immediately and saved to your profile.')}
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+          {supportedLocales.map((option) => (
+            <Button
+              key={option}
+              type="button"
+              variant={locale === option ? 'default' : 'outline'}
+              className="justify-start sm:min-w-42"
+              onClick={() => handleLocaleChange(option)}
+              disabled={mutation.isPending}
+            >
+              <Languages className="size-4" />
+              {t(localeLabels[option])}
+            </Button>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 function SettingsPage() {
   const qc = useQueryClient()
+  const { t } = useI18n()
   const [apiKey, setApiKey] = useState('')
   const [model, setModel] = useState('gemini-1.5-flash')
 
@@ -90,40 +150,41 @@ function SettingsPage() {
     mutationFn: () => api.post('/v1/ai/config', { apiKey, model, provider: 'google' }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ai-config'] })
-      toast.success('AI config saved')
+      toast.success(t('AI config saved'))
       setApiKey('')
     },
-    onError: () => toast.error('Failed to save'),
+    onError: () => toast.error(t('Failed to save')),
   })
 
   const deleteMutation = useMutation({
     mutationFn: () => api.delete('/v1/ai/config'),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['ai-config'] })
-      toast.success('AI config removed')
+      toast.success(t('AI config removed'))
     },
   })
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold">Settings</h1>
+      <h1 className="text-2xl font-bold">{t('Settings')}</h1>
 
       <AppearanceSettingsCard />
+      <LanguageSettingsCard />
 
       <Card>
         <CardHeader>
-          <CardTitle>AI Configuration</CardTitle>
+          <CardTitle>{t('AI Configuration')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {config && (
             <div className="rounded-md bg-muted p-3 text-sm">
-              <p>Provider: {config.provider}</p>
-              <p>Model: {config.model}</p>
-              <p className="text-muted-foreground">API key is encrypted and stored securely.</p>
+              <p>{t('Provider: {provider}', { provider: config.provider })}</p>
+              <p>{t('Model: {model}', { model: config.model })}</p>
+              <p className="text-muted-foreground">{t('API key is encrypted and stored securely.')}</p>
             </div>
           )}
           <div className="space-y-2">
-            <Label>Google AI API Key</Label>
+            <Label>{t('Google AI API Key')}</Label>
             <Input
               type="password"
               value={apiKey}
@@ -132,16 +193,16 @@ function SettingsPage() {
             />
           </div>
           <div className="space-y-2">
-            <Label>Model</Label>
+            <Label>{t('Model')}</Label>
             <Input value={model} onChange={(e) => setModel(e.target.value)} />
           </div>
           <div className="flex gap-2">
             <Button onClick={() => saveMutation.mutate()} disabled={!apiKey || saveMutation.isPending}>
-              Save
+              {t('Save')}
             </Button>
             {config && (
               <Button variant="destructive" onClick={() => deleteMutation.mutate()}>
-                Remove
+                {t('Remove')}
               </Button>
             )}
           </div>
